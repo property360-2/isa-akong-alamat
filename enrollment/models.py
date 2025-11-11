@@ -59,6 +59,24 @@ class Section(models.Model):
         subjects_list = ', '.join([s.code for s in self.subjects.all()])
         return f"{self.section_code} ({subjects_list})"
 
+    @property
+    def enrolled_count(self):
+        """Count the number of enrolled students in this section"""
+        return self.studentsubject_set.filter(status='enrolled').count()
+
+    @property
+    def is_full(self):
+        """Check if the section is at capacity"""
+        return self.enrolled_count >= self.capacity
+
+    def get_subjects_display(self):
+        """Get comma-separated list of subject codes for admin display"""
+        return ', '.join([s.code for s in self.subjects.all()])
+
+    def get_professors_display(self):
+        """Get comma-separated list of professor names for admin display"""
+        return ', '.join([p.get_full_name() for p in self.professors.all()])
+
 
 class StudentSubject(models.Model):
     STATUS_CHOICES = [

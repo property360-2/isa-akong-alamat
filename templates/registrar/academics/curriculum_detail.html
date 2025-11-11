@@ -165,6 +165,9 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Recommended
                         </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -191,6 +194,22 @@
                             {% else %}
                             <span class="text-gray-400">No</span>
                             {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button onclick="editCurriculumSubject({{ curriculum.id }}, {{ cs.id }})"
+                                    class="text-primary hover:text-blue-900"
+                                    title="Edit">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+                            <button onclick="removeCurriculumSubject({{ curriculum.id }}, {{ cs.id }})"
+                                    class="text-red-600 hover:text-red-900"
+                                    title="Remove">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -243,4 +262,36 @@
 
 <!-- Modal Container -->
 <div id="modal-container"></div>
+
+<script>
+    function removeCurriculumSubject(curriculumId, curriculumSubjectId) {
+        if (confirm('Are you sure you want to remove this subject from the curriculum?')) {
+            fetch(`/registrar/academics/curricula/${curriculumId}/subjects/${curriculumSubjectId}/remove/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to remove subject');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while removing the subject');
+            });
+        }
+    }
+
+    function editCurriculumSubject(curriculumId, curriculumSubjectId) {
+        // Redirect to edit page for curriculum subject
+        window.location.href = `/registrar/academics/curricula/${curriculumId}/subjects/${curriculumSubjectId}/edit/`;
+    }
+</script>
 {% endblock %}

@@ -22,6 +22,8 @@ urlpatterns = [
     path('curricula/<int:pk>/', views.curriculum_detail, name='curriculum_detail'),
     path('curricula/<int:pk>/update/', views.curriculum_update, name='curriculum_update'),
     path('curricula/<int:pk>/add-subjects/', views.curriculum_add_subjects, name='curriculum_add_subjects'),
+    path('curricula/<int:curriculum_pk>/subjects/<int:subject_pk>/remove/', views.curriculum_remove_subject, name='curriculum_remove_subject'),
+    path('curricula/<int:curriculum_pk>/subjects/<int:subject_pk>/edit/', views.curriculum_edit_subject, name='curriculum_edit_subject'),
     path('curricula/<int:pk>/duplicate/', views.curriculum_duplicate, name='curriculum_duplicate'),
     path('curricula/<int:pk>/toggle-active/', views.curriculum_toggle_active, name='curriculum_toggle_active'),
 
