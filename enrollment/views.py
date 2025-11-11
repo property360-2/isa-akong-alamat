@@ -302,11 +302,12 @@ def sections_list(request):
 @role_required('registrar')
 def section_create(request):
     """
-    Create a new section with multiple subjects and professors.
+    Create a new section with multiple subjects and professors from a selected program.
     """
-    from academics.models import Subject
+    from academics.models import Subject, Program
 
     if request.method == 'POST':
+        program_id = request.POST.get('program_id')
         subject_ids = request.POST.getlist('subjects[]')
         term_id = request.POST.get('term_id')
         section_code = request.POST.get('section_code')
@@ -314,12 +315,19 @@ def section_create(request):
         professor_ids = request.POST.getlist('professors[]')
 
         # Validation
-        if not all([subject_ids, term_id, section_code]):
-            messages.error(request, 'Subjects, Term, and Section Code are required.')
+        if not all([program_id, subject_ids, term_id, section_code]):
+            messages.error(request, 'Program, Subjects, Term, and Section Code are required.')
             return redirect('enrollment:sections_list')
 
         try:
+            program = Program.objects.get(pk=program_id)
             term = Term.objects.get(pk=term_id)
+
+            # Validate that all selected subjects belong to the program
+            subjects = Subject.objects.filter(id__in=subject_ids, program=program)
+            if len(subjects) != len(subject_ids):
+                messages.error(request, 'Some selected subjects do not belong to the selected program.')
+                return redirect('enrollment:sections_list')
 
             # Check for duplicate section code in term
             if Section.objects.filter(term=term, section_code=section_code).exists():
@@ -335,7 +343,6 @@ def section_create(request):
             )
 
             # Add subjects to section
-            subjects = Subject.objects.filter(id__in=subject_ids)
             section.subjects.set(subjects)
 
             # Add professors to section
@@ -353,6 +360,7 @@ def section_create(request):
                 entity='Section',
                 entity_id=section.id,
                 new_value_json={
+                    'program': program.name,
                     'subjects': subject_codes,
                     'term': term.name,
                     'section_code': section_code,
