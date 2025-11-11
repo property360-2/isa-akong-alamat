@@ -12,6 +12,8 @@ urlpatterns = [
     path('programs/create/', views.program_create, name='program_create'),
     path('programs/<int:pk>/update/', views.program_update, name='program_update'),
     path('programs/<int:pk>/delete/', views.program_delete, name='program_delete'),
+    path('programs/<int:pk>/subjects/', views.program_subjects, name='program_subjects'),
+    path('programs/<int:program_pk>/subjects/<int:subject_pk>/archive/', views.program_subject_archive, name='program_subject_archive'),
 
     # Curricula
     path('curricula/', views.curricula_list, name='curricula_list'),

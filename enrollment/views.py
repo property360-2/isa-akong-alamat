@@ -4,6 +4,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from users.decorators import role_required
 from .models import Term, Section, Student, StudentSubject
+from users.models import User
 from audit.models import AuditTrail
 import json
 
@@ -273,7 +274,7 @@ def term_delete(request, pk):
 @role_required('registrar')
 def sections_list(request):
     """
-    List all sections with filtering by term.
+    List all sections with filtering by term and optimized queries for multi-select fields.
     """
     from academics.models import Subject
 
@@ -282,7 +283,7 @@ def sections_list(request):
     selected_term_id = request.GET.get('term', active_term.id if active_term else None)
 
     terms = Term.objects.all().order_by('-start_date')
-    sections = Section.objects.all().select_related('subject', 'term', 'professor')
+    sections = Section.objects.all().prefetch_related('subjects', 'professors').select_related('term')
 
     if selected_term_id:
         sections = sections.filter(term_id=selected_term_id)
@@ -301,58 +302,66 @@ def sections_list(request):
 @role_required('registrar')
 def section_create(request):
     """
-    Create a new section.
+    Create a new section with multiple subjects and professors.
     """
     from academics.models import Subject
 
     if request.method == 'POST':
-        subject_id = request.POST.get('subject_id')
+        subject_ids = request.POST.getlist('subjects[]')
         term_id = request.POST.get('term_id')
         section_code = request.POST.get('section_code')
         capacity = request.POST.get('capacity', 40)
-        professor_id = request.POST.get('professor_id')
+        professor_ids = request.POST.getlist('professors[]')
 
         # Validation
-        if not all([subject_id, term_id, section_code, professor_id]):
-            messages.error(request, 'All fields are required.')
+        if not all([subject_ids, term_id, section_code]):
+            messages.error(request, 'Subjects, Term, and Section Code are required.')
             return redirect('enrollment:sections_list')
 
         try:
-            subject = Subject.objects.get(pk=subject_id)
             term = Term.objects.get(pk=term_id)
-            professor = User.objects.get(pk=professor_id, role='professor')
 
-            # Check for duplicate
-            if Section.objects.filter(subject=subject, term=term, section_code=section_code).exists():
-                messages.error(request, f'Section {section_code} already exists for {subject.code} in {term.name}.')
+            # Check for duplicate section code in term
+            if Section.objects.filter(term=term, section_code=section_code).exists():
+                messages.error(request, f'Section {section_code} already exists for {term.name}.')
                 return redirect('enrollment:sections_list')
 
             # Create section
             section = Section.objects.create(
-                subject=subject,
                 term=term,
                 section_code=section_code,
                 capacity=capacity,
-                professor=professor,
                 status='open',
             )
 
+            # Add subjects to section
+            subjects = Subject.objects.filter(id__in=subject_ids)
+            section.subjects.set(subjects)
+
+            # Add professors to section
+            if professor_ids:
+                professors = User.objects.filter(id__in=professor_ids, role='professor')
+                section.professors.set(professors)
+
             # Audit trail
+            subject_codes = ', '.join([s.code for s in subjects])
+            professor_names = ', '.join([p.get_full_name() or p.username for p in section.professors.all()])
+
             AuditTrail.objects.create(
                 actor=request.user,
                 action='create',
                 entity='Section',
                 entity_id=section.id,
                 new_value_json={
-                    'subject': subject.code,
+                    'subjects': subject_codes,
                     'term': term.name,
                     'section_code': section_code,
                     'capacity': capacity,
-                    'professor': professor.username,
+                    'professors': professor_names or 'None',
                 }
             )
 
-            messages.success(request, f'Section {section_code} created successfully.')
+            messages.success(request, f'Section {section_code} created successfully with {len(subjects)} subject(s).')
             return redirect('enrollment:sections_list')
 
         except Exception as e:
@@ -373,32 +382,49 @@ def section_create(request):
 @role_required('registrar')
 def section_update(request, pk):
     """
-    Update an existing section.
+    Update an existing section with multiple subjects and professors.
     """
     section = get_object_or_404(Section, pk=pk)
 
     if request.method == 'POST':
+        old_subjects = ', '.join([s.code for s in section.subjects.all()])
+        old_professors = ', '.join([p.get_full_name() or p.username for p in section.professors.all()])
+
         old_values = {
             'section_code': section.section_code,
             'capacity': section.capacity,
-            'professor': section.professor.username,
+            'subjects': old_subjects,
+            'professors': old_professors or 'None',
             'status': section.status,
         }
 
         # Update fields
         section.section_code = request.POST.get('section_code', section.section_code)
         section.capacity = request.POST.get('capacity', section.capacity)
-        professor_id = request.POST.get('professor_id')
 
-        if professor_id:
-            section.professor = User.objects.get(pk=professor_id, role='professor')
+        # Update subjects
+        subject_ids = request.POST.getlist('subjects[]')
+        if subject_ids:
+            subjects = section.subjects.model.objects.filter(id__in=subject_ids)
+            section.subjects.set(subjects)
+
+        # Update professors
+        professor_ids = request.POST.getlist('professors[]')
+        section.professors.clear()
+        if professor_ids:
+            professors = User.objects.filter(id__in=professor_ids, role='professor')
+            section.professors.set(professors)
 
         section.save()
+
+        new_subjects = ', '.join([s.code for s in section.subjects.all()])
+        new_professors = ', '.join([p.get_full_name() or p.username for p in section.professors.all()])
 
         new_values = {
             'section_code': section.section_code,
             'capacity': section.capacity,
-            'professor': section.professor.username,
+            'subjects': new_subjects,
+            'professors': new_professors or 'None',
             'status': section.status,
         }
 
@@ -415,8 +441,12 @@ def section_update(request, pk):
         messages.success(request, f'Section {section.section_code} updated successfully.')
         return redirect('enrollment:sections_list')
 
+    # Get terms for the form
+    terms = Term.objects.all().order_by('-start_date')
+
     context = {
         'section': section,
+        'terms': terms,
     }
     return render(request, 'registrar/sections/section_form.html', context)
 

@@ -20,10 +20,19 @@ class TermAdmin(admin.ModelAdmin):
 
 @admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
-    list_display = ('section_code', 'subject', 'term', 'professor', 'capacity', 'status', 'created_at')
-    list_filter = ('status', 'term', 'subject__program')
-    search_fields = ('section_code', 'subject__code', 'subject__title', 'professor__username')
+    list_display = ('section_code', 'get_subjects_display', 'term', 'get_professors_display', 'capacity', 'status', 'created_at')
+    list_filter = ('status', 'term')
+    search_fields = ('section_code', 'subjects__code', 'subjects__title', 'professors__username')
     ordering = ('-created_at',)
+    filter_horizontal = ('subjects', 'professors')
+
+    def get_subjects_display(self, obj):
+        return ', '.join([s.code for s in obj.subjects.all()])
+    get_subjects_display.short_description = 'Subjects'
+
+    def get_professors_display(self, obj):
+        return ', '.join([p.get_full_name() or p.username for p in obj.professors.all()])
+    get_professors_display.short_description = 'Professors'
 
 
 @admin.register(StudentSubject)

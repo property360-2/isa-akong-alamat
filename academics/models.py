@@ -39,6 +39,7 @@ class Subject(models.Model):
     recommended_year = models.PositiveIntegerField(null=True, blank=True)
     recommended_sem = models.PositiveIntegerField(null=True, blank=True)
     active = models.BooleanField(default=True)
+    archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
