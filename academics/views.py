@@ -361,6 +361,89 @@ def curriculum_detail(request, pk):
 
 
 @role_required('registrar')
+def curriculum_add_subjects(request, pk):
+    """Add subjects to a curriculum (single or bulk)"""
+    curriculum = get_object_or_404(Curriculum, pk=pk)
+
+    if request.method == 'POST':
+        try:
+            subject_ids = request.POST.getlist('subject_ids[]')
+            year_level = request.POST.get('year_level')
+            term_no = request.POST.get('term_no')
+
+            # Validation
+            if not all([subject_ids, year_level, term_no]):
+                return JsonResponse({'success': False, 'message': 'Subject, Year Level, and Term are required'}, status=400)
+
+            year_level = int(year_level)
+            term_no = int(term_no)
+
+            # Get subjects and validate they belong to the curriculum's program
+            subjects = Subject.objects.filter(
+                id__in=subject_ids,
+                program=curriculum.program,
+                active=True,
+                archived=False
+            )
+
+            if len(subjects) != len(subject_ids):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Some selected subjects do not belong to this curriculum\'s program or are inactive'
+                }, status=400)
+
+            # Add subjects to curriculum
+            added_count = 0
+            for subject in subjects:
+                # Check if already exists
+                if not CurriculumSubject.objects.filter(curriculum=curriculum, subject=subject).exists():
+                    CurriculumSubject.objects.create(
+                        curriculum=curriculum,
+                        subject=subject,
+                        year_level=year_level,
+                        term_no=term_no,
+                        is_recommended=True
+                    )
+                    added_count += 1
+
+            # Audit trail
+            AuditTrail.objects.create(
+                actor=request.user,
+                action='add_subjects',
+                entity='Curriculum',
+                entity_id=curriculum.id,
+                new_value_json={
+                    'subject_count': added_count,
+                    'year_level': year_level,
+                    'term_no': term_no,
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': f'{added_count} subject(s) added to curriculum successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    # GET request - show add subjects modal
+    subjects = Subject.objects.filter(
+        program=curriculum.program,
+        active=True,
+        archived=False
+    ).exclude(
+        curriculumsubject__curriculum=curriculum
+    ).distinct()
+
+    context = {
+        'curriculum': curriculum,
+        'available_subjects': subjects,
+    }
+    return render(request, 'registrar/academics/curriculum_add_subjects_modal.html', context)
+
+
+@role_required('registrar')
 def curriculum_update(request, pk):
     """Update an existing curriculum"""
     curriculum = get_object_or_404(Curriculum, pk=pk)
@@ -741,9 +824,34 @@ def subject_delete(request, pk):
 
 
 @role_required('registrar')
+def program_search(request):
+    """Live search for programs"""
+    query = request.GET.get('q', '')
+
+    programs = Program.objects.filter(
+        Q(name__icontains=query),
+    )
+
+    programs = programs[:10]  # Limit to 10 results
+
+    results = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'level': p.get_level_display(),
+            'display': f"{p.name} ({p.get_level_display()})"
+        }
+        for p in programs
+    ]
+
+    return JsonResponse({'results': results})
+
+
+@role_required('registrar')
 def subject_search(request):
     """Live search for subjects (used for prerequisites) - excludes archived subjects"""
     query = request.GET.get('q', '')
+    program_id = request.GET.get('program', None)
     exclude_id = request.GET.get('exclude', None)
 
     subjects = Subject.objects.filter(
@@ -751,6 +859,10 @@ def subject_search(request):
         active=True,
         archived=False
     )
+
+    # Filter by program if specified
+    if program_id:
+        subjects = subjects.filter(program_id=program_id)
 
     # Exclude the subject being edited (can't be its own prerequisite)
     if exclude_id:

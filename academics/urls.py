@@ -14,12 +14,14 @@ urlpatterns = [
     path('programs/<int:pk>/delete/', views.program_delete, name='program_delete'),
     path('programs/<int:pk>/subjects/', views.program_subjects, name='program_subjects'),
     path('programs/<int:program_pk>/subjects/<int:subject_pk>/archive/', views.program_subject_archive, name='program_subject_archive'),
+    path('programs/search/', views.program_search, name='program_search'),
 
     # Curricula
     path('curricula/', views.curricula_list, name='curricula_list'),
     path('curricula/create/', views.curriculum_create, name='curriculum_create'),
     path('curricula/<int:pk>/', views.curriculum_detail, name='curriculum_detail'),
     path('curricula/<int:pk>/update/', views.curriculum_update, name='curriculum_update'),
+    path('curricula/<int:pk>/add-subjects/', views.curriculum_add_subjects, name='curriculum_add_subjects'),
     path('curricula/<int:pk>/duplicate/', views.curriculum_duplicate, name='curriculum_duplicate'),
     path('curricula/<int:pk>/toggle-active/', views.curriculum_toggle_active, name='curriculum_toggle_active'),
 
