@@ -1,0 +1,297 @@
+<!-- Section Form Modal -->
+<div class="fixed z-10 inset-0 overflow-y-auto"
+     x-data="{
+        open: true,
+        subjectSearch: '',
+        subjectResults: [],
+        subjectSearching: false,
+        selectedSubject: {% if section %}{ id: {{ section.subject.id }}, code: '{{ section.subject.code }}', title: '{{ section.subject.title }}' }{% else %}null{% endif %},
+        professorSearch: '',
+        professorResults: [],
+        professorSearching: false,
+        selectedProfessor: {% if section and section.professor %}{ id: {{ section.professor.id }}, name: '{{ section.professor.get_full_name }}', email: '{{ section.professor.email }}' }{% else %}null{% endif %}
+     }"
+     x-show="open"
+     style="display: none;">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             @click="open = false"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
+            <form id="section-form"
+                  hx-post="{% if section %}{% url 'enrollment:section_update' section.id %}{% else %}{% url 'enrollment:section_create' %}{% endif %}"
+                  hx-swap="none">
+                {% csrf_token %}
+
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[80vh] overflow-y-auto">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                {% if section %}Edit Section{% else %}Create New Section{% endif %}
+                            </h3>
+
+                            <div class="space-y-4">
+                                <!-- Subject Search -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Subject <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <!-- Selected Subject Display -->
+                                    <div x-show="selectedSubject" class="mb-2" style="display: none;">
+                                        <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                            <div>
+                                                <div class="text-sm font-medium text-blue-900" x-text="selectedSubject?.code"></div>
+                                                <div class="text-xs text-blue-700" x-text="selectedSubject?.title"></div>
+                                            </div>
+                                            <button type="button"
+                                                    @click="selectedSubject = null; subjectSearch = ''"
+                                                    class="text-blue-600 hover:text-blue-800">
+                                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="subject_id" :value="selectedSubject?.id">
+                                    </div>
+
+                                    <!-- Subject Search Input -->
+                                    <div x-show="!selectedSubject" class="relative">
+                                        <input type="text"
+                                               x-model="subjectSearch"
+                                               @input.debounce.300ms="
+                                                   if (subjectSearch.length >= 2) {
+                                                       subjectSearching = true;
+                                                       fetch(`/registrar/academics/subjects/search/?q=${subjectSearch}`)
+                                                           .then(r => r.json())
+                                                           .then(data => {
+                                                               subjectResults = data.results || [];
+                                                               subjectSearching = false;
+                                                           })
+                                                           .catch(() => {
+                                                               subjectSearching = false;
+                                                           });
+                                                   } else {
+                                                       subjectResults = [];
+                                                   }
+                                               "
+                                               placeholder="Search subjects by code or title..."
+                                               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+
+                                        <!-- Loading Spinner -->
+                                        <div x-show="subjectSearching" class="absolute right-3 top-2">
+                                            <svg class="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
+
+                                        <!-- Search Results Dropdown -->
+                                        <div x-show="subjectResults.length > 0"
+                                             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            <template x-for="result in subjectResults" :key="result.id">
+                                                <button type="button"
+                                                        @click="selectedSubject = result; subjectSearch = ''; subjectResults = []"
+                                                        class="w-full text-left px-3 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                                    <div class="text-sm font-medium text-gray-900" x-text="result.code"></div>
+                                                    <div class="text-xs text-gray-500" x-text="result.title"></div>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- Empty State -->
+                                        <div x-show="subjectSearch.length >= 2 && subjectResults.length === 0 && !subjectSearching"
+                                             class="mt-2 text-sm text-gray-500 italic">
+                                            No subjects found
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Term Dropdown -->
+                                <div>
+                                    <label for="term_id" class="block text-sm font-medium text-gray-700">
+                                        Term <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="term_id"
+                                            id="term_id"
+                                            required
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                        <option value="">Select Term</option>
+                                        {% for term in terms %}
+                                        <option value="{{ term.id }}"
+                                                {% if section and section.term.id == term.id %}selected
+                                                {% elif not section and term.is_active %}selected{% endif %}>
+                                            {{ term.name }}{% if term.is_active %} (Active){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Section Code -->
+                                <div>
+                                    <label for="section_code" class="block text-sm font-medium text-gray-700">
+                                        Section Code <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text"
+                                           name="section_code"
+                                           id="section_code"
+                                           value="{% if section %}{{ section.section_code }}{% endif %}"
+                                           placeholder="e.g., CS101-A"
+                                           required
+                                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <p class="mt-1 text-xs text-gray-500">Example: CS101-A, MATH201-B</p>
+                                </div>
+
+                                <!-- Capacity -->
+                                <div>
+                                    <label for="capacity" class="block text-sm font-medium text-gray-700">
+                                        Capacity <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="capacity"
+                                           id="capacity"
+                                           min="1"
+                                           max="200"
+                                           value="{% if section %}{{ section.capacity }}{% else %}40{% endif %}"
+                                           required
+                                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                    <p class="mt-1 text-xs text-gray-500">Maximum number of students (default: 40)</p>
+                                </div>
+
+                                <!-- Professor Search -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Professor (Optional)
+                                    </label>
+
+                                    <!-- Selected Professor Display -->
+                                    <div x-show="selectedProfessor" class="mb-2" style="display: none;">
+                                        <div class="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-md">
+                                            <div>
+                                                <div class="text-sm font-medium text-purple-900" x-text="selectedProfessor?.name"></div>
+                                                <div class="text-xs text-purple-700" x-text="selectedProfessor?.email"></div>
+                                            </div>
+                                            <button type="button"
+                                                    @click="selectedProfessor = null; professorSearch = ''"
+                                                    class="text-purple-600 hover:text-purple-800">
+                                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="professor_id" :value="selectedProfessor?.id">
+                                    </div>
+
+                                    <!-- Professor Search Input -->
+                                    <div x-show="!selectedProfessor" class="relative">
+                                        <input type="text"
+                                               x-model="professorSearch"
+                                               @input.debounce.300ms="
+                                                   if (professorSearch.length >= 2) {
+                                                       professorSearching = true;
+                                                       fetch(`/registrar/enrollment/professors/search/?q=${professorSearch}`)
+                                                           .then(r => r.json())
+                                                           .then(data => {
+                                                               professorResults = data.results || [];
+                                                               professorSearching = false;
+                                                           })
+                                                           .catch(() => {
+                                                               professorSearching = false;
+                                                           });
+                                                   } else {
+                                                       professorResults = [];
+                                                   }
+                                               "
+                                               placeholder="Search professors by name or email..."
+                                               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+
+                                        <!-- Loading Spinner -->
+                                        <div x-show="professorSearching" class="absolute right-3 top-2">
+                                            <svg class="animate-spin h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </div>
+
+                                        <!-- Search Results Dropdown -->
+                                        <div x-show="professorResults.length > 0"
+                                             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            <template x-for="result in professorResults" :key="result.id">
+                                                <button type="button"
+                                                        @click="selectedProfessor = result; professorSearch = ''; professorResults = []"
+                                                        class="w-full text-left px-3 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
+                                                    <div class="text-sm font-medium text-gray-900" x-text="result.name"></div>
+                                                    <div class="text-xs text-gray-500" x-text="result.email"></div>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- Empty State -->
+                                        <div x-show="professorSearch.length >= 2 && professorResults.length === 0 && !professorSearching"
+                                             class="mt-2 text-sm text-gray-500 italic">
+                                            No professors found
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm">
+                        {% if section %}Update Section{% else %}Create Section{% endif %}
+                    </button>
+                    <button type="button"
+                            @click="open = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('section-form').addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.successful) {
+            const response = JSON.parse(event.detail.xhr.response);
+            if (response.success) {
+                // Close modal
+                const modalRoot = document.querySelector('[x-data]');
+                if (modalRoot && modalRoot.__x) {
+                    modalRoot.__x.$data.open = false;
+                }
+                // Clear modal container
+                setTimeout(() => {
+                    document.getElementById('modal-container').innerHTML = '';
+                }, 300);
+                // Trigger sections list refresh
+                document.body.dispatchEvent(new CustomEvent('sectionsUpdated'));
+                // Show success message (you can replace with a toast notification)
+                alert(response.message);
+            } else {
+                alert(response.message || 'An error occurred');
+            }
+        }
+    });
+</script>

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if term %}Edit Term{% else %}Create Term{% endif %} - Richwell Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">
+                    {% if term %}Edit Term{% else %}Create New Term{% endif %}
+                </h3>
+            </div>
+
+            <div class="px-6 py-4 space-y-4">
+                <!-- Term Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Term Name *</label>
+                    <input type="text" name="name" id="name" required
+                           value="{{ term.name|default:'' }}"
+                           placeholder="e.g., 1st Semester AY 2025-2026"
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+
+                <!-- Academic Level -->
+                <div>
+                    <label for="level" class="block text-sm font-medium text-gray-700">Academic Level *</label>
+                    <select name="level" id="level" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        {% for value, label in level_choices %}
+                        <option value="{{ value }}" {% if term.level == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Each academic level can have its own active term</p>
+                </div>
+
+                <!-- Dates Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date *</label>
+                        <input type="date" name="start_date" id="start_date" required
+                               value="{{ term.start_date|date:'Y-m-d'|default:'' }}"
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700">End Date *</label>
+                        <input type="date" name="end_date" id="end_date" required
+                               value="{{ term.end_date|date:'Y-m-d'|default:'' }}"
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Deadlines Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="add_drop_deadline" class="block text-sm font-medium text-gray-700">Add/Drop Deadline</label>
+                        <input type="date" name="add_drop_deadline" id="add_drop_deadline"
+                               value="{% if term.add_drop_deadline %}{{ term.add_drop_deadline|date:'Y-m-d' }}{% endif %}"
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="grade_encoding_deadline" class="block text-sm font-medium text-gray-700">Grade Encoding Deadline</label>
+                        <input type="date" name="grade_encoding_deadline" id="grade_encoding_deadline"
+                               value="{% if term.grade_encoding_deadline %}{{ term.grade_encoding_deadline|date:'Y-m-d' }}{% endif %}"
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-lg">
+                <a href="{% url 'enrollment:terms_list' %}"
+                   class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    {% if term %}Update Term{% else %}Create Term{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

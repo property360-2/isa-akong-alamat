@@ -1,0 +1,129 @@
+<!-- Curricula List -->
+<div class="mb-4 flex justify-between items-center">
+    <h2 class="text-xl font-semibold text-gray-800">Curricula</h2>
+    <button hx-get="{% url 'academics:curriculum_create' %}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Curriculum
+    </button>
+</div>
+
+<!-- Curricula Table -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    {% if curricula %}
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Program
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Version
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Effective SY
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Active
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for curriculum in curricula %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ curriculum.program.name }}</div>
+                    <div class="text-xs text-gray-500">{{ curriculum.program.get_level_display }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">{{ curriculum.version }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ curriculum.effective_sy }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <button onclick="toggleActive({{ curriculum.id }}, {{ curriculum.active|yesno:'true,false' }})"
+                            class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary {{ curriculum.active|yesno:'bg-green-600,bg-gray-200' }}">
+                        <span class="sr-only">Toggle active</span>
+                        <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 {{ curriculum.active|yesno:'translate-x-5,translate-x-0' }}"></span>
+                    </button>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href="{% url 'academics:curriculum_detail' curriculum.id %}"
+                       class="text-primary hover:text-blue-900 mr-3">
+                        View
+                    </a>
+                    <button hx-get="{% url 'academics:curriculum_update' curriculum.id %}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            class="text-primary hover:text-blue-900 mr-3">
+                        Edit
+                    </button>
+                    <button hx-get="{% url 'academics:curriculum_duplicate' curriculum.id %}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            class="text-secondary hover:text-purple-900">
+                        Duplicate
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No curricula</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new curriculum.</p>
+        <div class="mt-6">
+            <button hx-get="{% url 'academics:curriculum_create' %}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Curriculum
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleActive(curriculumId, currentStatus) {
+        const newStatus = !currentStatus;
+        const formData = new FormData();
+        formData.append('active', newStatus);
+
+        fetch(`/registrar/academics/curricula/${curriculumId}/toggle-active/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                htmx.trigger('#curricula-content', 'curriculaUpdated');
+                alert(data.message);
+            } else {
+                alert(data.message || 'An error occurred');
+            }
+        })
+        .catch(error => {
+            alert('An error occurred while toggling active status');
+            console.error(error);
+        });
+    }
+</script>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Richwell School Portal{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        secondary: '#7c3aed',
+                        accent: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    {% if user.is_authenticated %}
+    <nav class="bg-white shadow-lg border-b border-gray-200" x-data="{ open: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'dashboard' %}" class="text-2xl font-bold text-primary">
+                            Richwell Portal
+                        </a>
+                    </div>
+
+                    <!-- Main Navigation (Desktop) -->
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{% url 'dashboard' %}"
+                           class="{% if request.resolver_match.url_name == 'dashboard' %}border-primary text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+
+                        {% if user.role == 'admin' %}
+                        <a href="{% url 'admin:index' %}"
+                           class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin Panel
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- User Menu (Desktop) -->
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <div class="relative" x-data="{ userMenu: false }">
+                        <button @click="userMenu = !userMenu"
+                                type="button"
+                                class="bg-white flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            <span class="sr-only">Open user menu</span>
+                            <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
+                                {{ user.username|slice:":1"|upper }}
+                            </div>
+                        </button>
+
+                        <!-- User Dropdown Menu -->
+                        <div x-show="userMenu"
+                             @click.away="userMenu = false"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50"
+                             style="display: none;">
+                            <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
+                                <div class="font-semibold">{{ user.get_full_name|default:user.username }}</div>
+                                <div class="text-xs text-gray-500">{{ user.role|title }}</div>
+                            </div>
+                            <a href="{% url 'logout' %}"
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Sign out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button @click="open = !open"
+                            type="button"
+                            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" style="display: none;" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div x-show="open" class="sm:hidden" style="display: none;">
+            <div class="pt-2 pb-3 space-y-1">
+                <a href="{% url 'dashboard' %}"
+                   class="{% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-50 border-primary text-primary{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                    Dashboard
+                </a>
+            </div>
+            <div class="pt-4 pb-3 border-t border-gray-200">
+                <div class="flex items-center px-4">
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-base font-medium text-gray-800">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="text-sm font-medium text-gray-500">{{ user.role|title }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 space-y-1">
+                    <a href="{% url 'logout' %}"
+                       class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                        Sign out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% for message in messages %}
+        <div class="rounded-md p-4 mb-4 {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    {% if message.tags == 'error' %}
+                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif message.tags == 'success' %}
+                    <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    {% else %}
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    {% endif %}
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">{{ message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm text-gray-500">
+                &copy; 2025 Richwell School Portal. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

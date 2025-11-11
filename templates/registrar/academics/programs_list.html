@@ -1,0 +1,107 @@
+<!-- Programs List -->
+<div class="mb-4 flex justify-between items-center">
+    <h2 class="text-xl font-semibold text-gray-800">Programs</h2>
+    <button hx-get="{% url 'academics:program_create' %}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Program
+    </button>
+</div>
+
+<!-- Programs Table -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    {% if programs %}
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Program Name
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Level
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Passing Grade
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created At
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for program in programs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ program.name }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ program.get_level_display }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ program.passing_grade }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ program.created_at|date:"M d, Y" }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button hx-get="{% url 'academics:program_update' program.id %}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            class="text-primary hover:text-blue-900 mr-3">
+                        Edit
+                    </button>
+                    <button onclick="confirmDelete({{ program.id }}, '{{ program.name }}')"
+                            class="text-red-600 hover:text-red-900">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No programs</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new program.</p>
+        <div class="mt-6">
+            <button hx-get="{% url 'academics:program_create' %}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Program
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function confirmDelete(programId, programName) {
+        if (confirm(`Are you sure you want to delete "${programName}"? This action cannot be undone.`)) {
+            htmx.ajax('POST', `/registrar/academics/programs/${programId}/delete/`, {
+                target: 'body',
+                swap: 'none',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(() => {
+                htmx.trigger('#programs-content', 'programsUpdated');
+            });
+        }
+    }
+</script>

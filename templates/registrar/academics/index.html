@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Academics Management - Richwell School Portal{% endblock %}
+
+{% block content %}
+<div x-data="{ activeTab: '{{ active_tab }}', showToast: false, toastMessage: '', toastLink: '', toastLinkText: '' }">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Academics Management</h1>
+        <p class="mt-2 text-sm text-gray-600">Manage programs, curricula, and subjects</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div x-show="showToast"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-4 right-4 z-50 bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 max-w-md"
+         style="display: none;">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3 w-0 flex-1">
+                <p class="text-sm font-medium text-green-800" x-text="toastMessage"></p>
+                <div class="mt-2" x-show="toastLink">
+                    <a :href="toastLink"
+                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <span x-text="toastLinkText"></span>
+                        <svg class="ml-2 -mr-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+                <button @click="showToast = false" class="bg-green-50 rounded-md inline-flex text-green-500 hover:text-green-600 focus:outline-none">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <a @click.prevent="activeTab = 'programs'; window.history.pushState({}, '', '?tab=programs')"
+               :class="activeTab === 'programs' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+               class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm cursor-pointer">
+                Programs
+            </a>
+            <a @click.prevent="activeTab = 'curricula'; window.history.pushState({}, '', '?tab=curricula')"
+               :class="activeTab === 'curricula' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+               class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm cursor-pointer">
+                Curricula
+            </a>
+            <a @click.prevent="activeTab = 'subjects'; window.history.pushState({}, '', '?tab=subjects')"
+               :class="activeTab === 'subjects' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+               class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm cursor-pointer">
+                Subjects
+            </a>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div>
+        <!-- Programs Tab -->
+        <div x-show="activeTab === 'programs'" style="display: none;">
+            <div id="programs-content"
+                 hx-get="{% url 'academics:programs_list' %}"
+                 hx-trigger="load, programsUpdated from:body"
+                 hx-swap="innerHTML">
+                <div class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Curricula Tab -->
+        <div x-show="activeTab === 'curricula'" style="display: none;">
+            <div id="curricula-content"
+                 hx-get="{% url 'academics:curricula_list' %}"
+                 hx-trigger="load, curriculaUpdated from:body"
+                 hx-swap="innerHTML">
+                <div class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Tab -->
+        <div x-show="activeTab === 'subjects'" style="display: none;">
+            <div id="subjects-content"
+                 hx-get="{% url 'academics:subjects_list' %}"
+                 hx-trigger="load, subjectsUpdated from:body"
+                 hx-swap="innerHTML">
+                <div class="flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+</div>
+
+<script>
+    // Function to show toast notification
+    function showToastNotification(message, link = '', linkText = '') {
+        const event = new CustomEvent('showToast', {
+            detail: { message, link, linkText }
+        });
+        document.dispatchEvent(event);
+    }
+
+    // Listen for toast events
+    document.addEventListener('showToast', (e) => {
+        const rootEl = document.querySelector('[x-data]');
+        if (rootEl && rootEl.__x) {
+            rootEl.__x.$data.toastMessage = e.detail.message;
+            rootEl.__x.$data.toastLink = e.detail.link || '';
+            rootEl.__x.$data.toastLinkText = e.detail.linkText || '';
+            rootEl.__x.$data.showToast = true;
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (rootEl.__x.$data.showToast) {
+                    rootEl.__x.$data.showToast = false;
+                }
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

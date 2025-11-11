@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms Management - Richwell Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Term Management</h1>
+            <p class="mt-2 text-sm text-gray-600">Manage academic semesters/trimesters and timeline</p>
+        </div>
+        <button onclick="openCreateModal()"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+            <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            New Term
+        </button>
+    </div>
+
+    <!-- Active Terms Banner (One per Level) -->
+    <div class="bg-white shadow rounded-lg border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Active Terms by Level</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- SHS -->
+            <div class="border rounded-lg p-4 {% if active_terms.SHS %}bg-green-50 border-green-300{% else %}bg-gray-50 border-gray-300{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Senior High School</h3>
+                    {% if active_terms.SHS %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Active</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">No Active Term</span>
+                    {% endif %}
+                </div>
+                {% if active_terms.SHS %}
+                <p class="text-sm text-gray-900 font-medium">{{ active_terms.SHS.name }}</p>
+                <p class="text-xs text-gray-600 mt-1">{{ active_terms.SHS.start_date }} to {{ active_terms.SHS.end_date }}</p>
+                {% else %}
+                <p class="text-xs text-gray-500">No active term for SHS</p>
+                {% endif %}
+            </div>
+
+            <!-- Bachelor -->
+            <div class="border rounded-lg p-4 {% if active_terms.Bachelor %}bg-green-50 border-green-300{% else %}bg-gray-50 border-gray-300{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Bachelor</h3>
+                    {% if active_terms.Bachelor %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Active</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">No Active Term</span>
+                    {% endif %}
+                </div>
+                {% if active_terms.Bachelor %}
+                <p class="text-sm text-gray-900 font-medium">{{ active_terms.Bachelor.name }}</p>
+                <p class="text-xs text-gray-600 mt-1">{{ active_terms.Bachelor.start_date }} to {{ active_terms.Bachelor.end_date }}</p>
+                {% else %}
+                <p class="text-xs text-gray-500">No active term for Bachelor</p>
+                {% endif %}
+            </div>
+
+            <!-- Masteral -->
+            <div class="border rounded-lg p-4 {% if active_terms.Masteral %}bg-green-50 border-green-300{% else %}bg-gray-50 border-gray-300{% endif %}">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Masteral</h3>
+                    {% if active_terms.Masteral %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Active</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">No Active Term</span>
+                    {% endif %}
+                </div>
+                {% if active_terms.Masteral %}
+                <p class="text-sm text-gray-900 font-medium">{{ active_terms.Masteral.name }}</p>
+                <p class="text-xs text-gray-600 mt-1">{{ active_terms.Masteral.start_date }} to {{ active_terms.Masteral.end_date }}</p>
+                {% else %}
+                <p class="text-xs text-gray-500">No active term for Masteral</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Table -->
+    <div class="bg-white shadow rounded-lg border border-gray-200">
+        <div class="overflow-x-auto">
+            {% if terms %}
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Term Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add/Drop Deadline</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade Deadline</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for term in terms %}
+                    <tr class="hover:bg-gray-50 {% if term.is_active %}bg-green-50{% endif %}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ term.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if term.level == 'SHS' %}bg-blue-100 text-blue-800
+                                {% elif term.level == 'Bachelor' %}bg-purple-100 text-purple-800
+                                {% else %}bg-indigo-100 text-indigo-800{% endif %}">
+                                {{ term.get_level_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.start_date }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.end_date }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.add_drop_deadline|default:"Not set" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.grade_encoding_deadline|default:"Not set" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if term.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            {% if not term.is_active %}
+                            <a href="{% url 'enrollment:term_activate' term.pk %}"
+                               class="text-green-600 hover:text-green-900"
+                               title="Activate">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'enrollment:term_close' term.pk %}"
+                               class="text-red-600 hover:text-red-900"
+                               title="Close">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+
+                            <button onclick="openEditModal({{ term.id }}, '{{ term.name }}', '{{ term.level }}', '{{ term.start_date|date:'Y-m-d' }}', '{{ term.end_date|date:'Y-m-d' }}', '{{ term.add_drop_deadline|date:'Y-m-d'|default:'' }}', '{{ term.grade_encoding_deadline|date:'Y-m-d'|default:'' }}')"
+                                    class="text-blue-600 hover:text-blue-900"
+                                    title="Edit">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </button>
+
+                            <a href="{% url 'enrollment:term_delete' term.pk %}"
+                               onclick="return confirm('Are you sure you want to delete this term?')"
+                               class="text-red-600 hover:text-red-900"
+                               title="Delete">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No terms</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating a new term.</p>
+                <div class="mt-6">
+                    <button onclick="openCreateModal()"
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        New Term
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Term Form Modal -->
+<div id="termModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50" x-data="{ open: false }" x-show="open" style="display: none;">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <form id="termForm" method="POST" action="{% url 'enrollment:term_create' %}">
+                {% csrf_token %}
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 id="modalTitle" class="text-lg font-medium text-gray-900">Create New Term</h3>
+                </div>
+
+                <div class="px-6 py-4 space-y-4">
+                    <!-- Term Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Term Name *</label>
+                        <input type="text" name="name" id="name" required
+                               placeholder="e.g., 1st Semester AY 2025-2026"
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+
+                    <!-- Academic Level -->
+                    <div>
+                        <label for="level" class="block text-sm font-medium text-gray-700">Academic Level *</label>
+                        <select name="level" id="level" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                            {% for value, label in level_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Each academic level can have its own active term independently</p>
+                    </div>
+
+                    <!-- Dates Row -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date *</label>
+                            <input type="date" name="start_date" id="start_date" required
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="end_date" class="block text-sm font-medium text-gray-700">End Date *</label>
+                            <input type="date" name="end_date" id="end_date" required
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Deadlines Row -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="add_drop_deadline" class="block text-sm font-medium text-gray-700">Add/Drop Deadline</label>
+                            <input type="date" name="add_drop_deadline" id="add_drop_deadline"
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="grade_encoding_deadline" class="block text-sm font-medium text-gray-700">Grade Encoding Deadline</label>
+                            <input type="date" name="grade_encoding_deadline" id="grade_encoding_deadline"
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-lg">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Save Term
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = 'Create New Term';
+    document.getElementById('termForm').action = "{% url 'enrollment:term_create' %}";
+    document.getElementById('termForm').reset();
+    document.getElementById('termModal').style.display = 'block';
+}
+
+function openEditModal(id, name, level, startDate, endDate, addDropDeadline, gradeDeadline) {
+    document.getElementById('modalTitle').textContent = 'Edit Term';
+    document.getElementById('termForm').action = `/registrar/enrollment/terms/${id}/update/`;
+    document.getElementById('name').value = name;
+    document.getElementById('level').value = level;
+    document.getElementById('start_date').value = startDate;
+    document.getElementById('end_date').value = endDate;
+    document.getElementById('add_drop_deadline').value = addDropDeadline;
+    document.getElementById('grade_encoding_deadline').value = gradeDeadline;
+    document.getElementById('termModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('termModal').style.display = 'none';
+}
+</script>
+{% endblock %}

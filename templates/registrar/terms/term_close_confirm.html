@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Close Term - Richwell Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Close Term</h3>
+        </div>
+
+        <div class="px-6 py-4">
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">
+                            <strong>Warning:</strong> Closing this term will mark it as inactive. This action will trigger the archiving process for term data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-sm text-gray-700 mb-4">
+                Are you sure you want to close the following term?
+            </p>
+
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <dl class="space-y-2">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Term Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ term.name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Duration</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ term.start_date }} to {{ term.end_date }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Current Status</dt>
+                        <dd class="mt-1">
+                            {% if term.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 rounded-b-lg">
+            <a href="{% url 'enrollment:terms_list' %}"
+               class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+            </a>
+            <form method="POST" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+                    Close Term
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ curriculum.version }} - Richwell School Portal{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'academics:index' %}?tab=curricula" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
+            <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Curricula
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h1 class="text-3xl font-bold text-gray-900">{{ curriculum.version }}</h1>
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+                <span class="font-medium">{{ curriculum.program.name }}</span>
+                <span class="mx-2">|</span>
+                <span>{{ curriculum.effective_sy }}</span>
+                <span class="mx-2">|</span>
+                {% if curriculum.active %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                        <circle cx="4" cy="4" r="3" />
+                    </svg>
+                    Active
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Inactive
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="border-b border-gray-200 mb-6" x-data="{ activeTab: 'subjects' }">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <a @click.prevent="activeTab = 'subjects'"
+           :class="activeTab === 'subjects' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm cursor-pointer">
+            Subjects
+        </a>
+        <a @click.prevent="activeTab = 'prerequisites'"
+           :class="activeTab === 'prerequisites' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm cursor-pointer">
+            Prerequisites Map
+        </a>
+    </nav>
+
+    <!-- Subjects Tab -->
+    <div x-show="activeTab === 'subjects'" class="mt-6" style="display: none;">
+        {% if curriculum_subjects %}
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Code
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Units
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Year
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Semester
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Recommended
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for cs in curriculum_subjects %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ cs.subject.code }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ cs.subject.title }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ cs.subject.units }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            Year {{ cs.year_level }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if cs.term_no == 1 %}1st Semester{% elif cs.term_no == 2 %}2nd Semester{% else %}Summer{% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if cs.is_recommended %}
+                            <span class="text-green-600">Yes</span>
+                            {% else %}
+                            <span class="text-gray-400">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-lg shadow">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No subjects</h3>
+            <p class="mt-1 text-sm text-gray-500">This curriculum has no subjects assigned yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Prerequisites Tab -->
+    <div x-show="activeTab === 'prerequisites'" class="mt-6" style="display: none;">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Subject Prerequisites Map</h3>
+            {% if curriculum_subjects %}
+            <div class="space-y-4">
+                {% for cs in curriculum_subjects %}
+                {% with prereqs=cs.subject.subject_prereqs.all %}
+                {% if prereqs %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="font-medium text-gray-900 mb-2">
+                        {{ cs.subject.code }} - {{ cs.subject.title }}
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600 mb-2">Prerequisites:</p>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            {% for prereq in prereqs %}
+                            <li>{{ prereq.prereq_subject.code }} - {{ prereq.prereq_subject.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500">No subjects with prerequisites in this curriculum.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
