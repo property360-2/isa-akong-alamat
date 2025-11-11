@@ -44,19 +44,20 @@ class Term(models.Model):
 
 class Section(models.Model):
     STATUS_CHOICES = [('open', 'Open'), ('full', 'Full'), ('closed', 'Closed')]
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subjects = models.ManyToManyField(Subject, related_name='sections')
     term = models.ForeignKey(Term, on_delete=models.CASCADE)
-    professor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'professor'})
+    professors = models.ManyToManyField(User, related_name='sections_taught', limit_choices_to={'role': 'professor'})
     section_code = models.CharField(max_length=20)
     capacity = models.PositiveIntegerField(default=40)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='open')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('subject', 'term', 'section_code')
+        unique_together = ('term', 'section_code')
 
     def __str__(self):
-        return f"{self.section_code} ({self.subject.code})"
+        subjects_list = ', '.join([s.code for s in self.subjects.all()])
+        return f"{self.section_code} ({subjects_list})"
 
 
 class StudentSubject(models.Model):

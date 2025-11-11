@@ -5,11 +5,11 @@
         subjectSearch: '',
         subjectResults: [],
         subjectSearching: false,
-        selectedSubject: {% if section %}{ id: {{ section.subject.id }}, code: '{{ section.subject.code }}', title: '{{ section.subject.title }}' }{% else %}null{% endif %},
+        selectedSubjects: [{% if section %}{% for subject in section.subjects.all %}{ id: {{ subject.id }}, code: '{{ subject.code }}', title: '{{ subject.title }}' }{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}],
         professorSearch: '',
         professorResults: [],
         professorSearching: false,
-        selectedProfessor: {% if section and section.professor %}{ id: {{ section.professor.id }}, name: '{{ section.professor.get_full_name }}', email: '{{ section.professor.email }}' }{% else %}null{% endif %}
+        selectedProfessors: [{% if section %}{% for prof in section.professors.all %}{ id: {{ prof.id }}, name: '{{ prof.get_full_name }}', email: '{{ prof.email }}' }{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
      }"
      x-show="open"
      style="display: none;">
@@ -48,32 +48,33 @@
                             </h3>
 
                             <div class="space-y-4">
-                                <!-- Subject Search -->
+                                <!-- Subjects Multi-Select -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Subject <span class="text-red-500">*</span>
+                                        Subjects <span class="text-red-500">*</span>
                                     </label>
 
-                                    <!-- Selected Subject Display -->
-                                    <div x-show="selectedSubject" class="mb-2" style="display: none;">
-                                        <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
-                                            <div>
-                                                <div class="text-sm font-medium text-blue-900" x-text="selectedSubject?.code"></div>
-                                                <div class="text-xs text-blue-700" x-text="selectedSubject?.title"></div>
+                                    <!-- Selected Subjects Display (Tags) -->
+                                    <div class="mb-2 flex flex-wrap gap-2">
+                                        <template x-for="(subject, index) in selectedSubjects" :key="subject.id">
+                                            <div class="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-full">
+                                                <span class="text-sm font-medium text-blue-900">
+                                                    <span x-text="subject.code"></span>
+                                                </span>
+                                                <button type="button"
+                                                        @click="selectedSubjects = selectedSubjects.filter((_, i) => i !== index)"
+                                                        class="text-blue-600 hover:text-blue-800">
+                                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                </button>
+                                                <input type="hidden" name="subjects[]" :value="subject.id">
                                             </div>
-                                            <button type="button"
-                                                    @click="selectedSubject = null; subjectSearch = ''"
-                                                    class="text-blue-600 hover:text-blue-800">
-                                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <input type="hidden" name="subject_id" :value="selectedSubject?.id">
+                                        </template>
                                     </div>
 
                                     <!-- Subject Search Input -->
-                                    <div x-show="!selectedSubject" class="relative">
+                                    <div class="relative">
                                         <input type="text"
                                                x-model="subjectSearch"
                                                @input.debounce.300ms="
@@ -82,7 +83,7 @@
                                                        fetch(`/registrar/academics/subjects/search/?q=${subjectSearch}`)
                                                            .then(r => r.json())
                                                            .then(data => {
-                                                               subjectResults = data.results || [];
+                                                               subjectResults = data.results.filter(s => !selectedSubjects.find(sel => sel.id === s.id)) || [];
                                                                subjectSearching = false;
                                                            })
                                                            .catch(() => {
@@ -108,7 +109,7 @@
                                              class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                                             <template x-for="result in subjectResults" :key="result.id">
                                                 <button type="button"
-                                                        @click="selectedSubject = result; subjectSearch = ''; subjectResults = []"
+                                                        @click="selectedSubjects.push(result); subjectSearch = ''; subjectResults = []"
                                                         class="w-full text-left px-3 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
                                                     <div class="text-sm font-medium text-gray-900" x-text="result.code"></div>
                                                     <div class="text-xs text-gray-500" x-text="result.title"></div>
@@ -175,32 +176,33 @@
                                     <p class="mt-1 text-xs text-gray-500">Maximum number of students (default: 40)</p>
                                 </div>
 
-                                <!-- Professor Search -->
+                                <!-- Professors Multi-Select -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Professor (Optional)
+                                        Professors (Optional)
                                     </label>
 
-                                    <!-- Selected Professor Display -->
-                                    <div x-show="selectedProfessor" class="mb-2" style="display: none;">
-                                        <div class="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-md">
-                                            <div>
-                                                <div class="text-sm font-medium text-purple-900" x-text="selectedProfessor?.name"></div>
-                                                <div class="text-xs text-purple-700" x-text="selectedProfessor?.email"></div>
+                                    <!-- Selected Professors Display (Tags) -->
+                                    <div class="mb-2 flex flex-wrap gap-2">
+                                        <template x-for="(professor, index) in selectedProfessors" :key="professor.id">
+                                            <div class="inline-flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-full">
+                                                <span class="text-sm font-medium text-purple-900">
+                                                    <span x-text="professor.name"></span>
+                                                </span>
+                                                <button type="button"
+                                                        @click="selectedProfessors = selectedProfessors.filter((_, i) => i !== index)"
+                                                        class="text-purple-600 hover:text-purple-800">
+                                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                </button>
+                                                <input type="hidden" name="professors[]" :value="professor.id">
                                             </div>
-                                            <button type="button"
-                                                    @click="selectedProfessor = null; professorSearch = ''"
-                                                    class="text-purple-600 hover:text-purple-800">
-                                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <input type="hidden" name="professor_id" :value="selectedProfessor?.id">
+                                        </template>
                                     </div>
 
                                     <!-- Professor Search Input -->
-                                    <div x-show="!selectedProfessor" class="relative">
+                                    <div class="relative">
                                         <input type="text"
                                                x-model="professorSearch"
                                                @input.debounce.300ms="
@@ -209,7 +211,7 @@
                                                        fetch(`/registrar/enrollment/professors/search/?q=${professorSearch}`)
                                                            .then(r => r.json())
                                                            .then(data => {
-                                                               professorResults = data.results || [];
+                                                               professorResults = data.results.filter(p => !selectedProfessors.find(sel => sel.id === p.id)) || [];
                                                                professorSearching = false;
                                                            })
                                                            .catch(() => {
@@ -235,7 +237,7 @@
                                              class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                                             <template x-for="result in professorResults" :key="result.id">
                                                 <button type="button"
-                                                        @click="selectedProfessor = result; professorSearch = ''; professorResults = []"
+                                                        @click="selectedProfessors.push(result); professorSearch = ''; professorResults = []"
                                                         class="w-full text-left px-3 py-2 hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
                                                     <div class="text-sm font-medium text-gray-900" x-text="result.name"></div>
                                                     <div class="text-xs text-gray-500" x-text="result.email"></div>

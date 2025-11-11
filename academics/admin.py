@@ -20,8 +20,8 @@ class CurriculumAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ('code', 'title', 'program', 'units', 'type', 'recommended_year', 'recommended_sem', 'active')
-    list_filter = ('program', 'type', 'active', 'recommended_year', 'recommended_sem')
+    list_display = ('code', 'title', 'program', 'units', 'type', 'recommended_year', 'recommended_sem', 'active', 'archived')
+    list_filter = ('program', 'type', 'active', 'archived', 'recommended_year', 'recommended_sem')
     search_fields = ('code', 'title', 'description')
     ordering = ('code',)
 

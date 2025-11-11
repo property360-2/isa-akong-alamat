@@ -82,13 +82,25 @@
                                 <div class="text-sm font-medium text-gray-900">{{ section.section_code }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900">{{ section.subject.code }}</div>
-                                <div class="text-xs text-gray-500 mt-1">{{ section.subject.title|truncatewords:5 }}</div>
+                                <div class="space-y-1">
+                                    {% for subject in section.subjects.all %}
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ subject.code }}</div>
+                                        <div class="text-xs text-gray-500">{{ subject.title|truncatewords:5 }}</div>
+                                    </div>
+                                    {% empty %}
+                                    <span class="text-sm text-gray-400 italic">No subjects assigned</span>
+                                    {% endfor %}
+                                </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if section.professor %}
-                                <div class="text-sm text-gray-900">{{ section.professor.get_full_name }}</div>
-                                <div class="text-xs text-gray-500">{{ section.professor.email }}</div>
+                            <td class="px-6 py-4">
+                                {% if section.professors.exists %}
+                                <div class="space-y-1">
+                                    {% for professor in section.professors.all %}
+                                    <div class="text-sm text-gray-900">{{ professor.get_full_name }}</div>
+                                    <div class="text-xs text-gray-500">{{ professor.email }}</div>
+                                    {% endfor %}
+                                </div>
                                 {% else %}
                                 <span class="text-sm text-gray-400 italic">Not assigned</span>
                                 {% endif %}

@@ -164,6 +164,83 @@ def program_delete(request, pk):
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 
+@role_required('registrar')
+def program_subjects(request, pk):
+    """View all subjects linked under a program's curricula"""
+    program = get_object_or_404(Program, pk=pk)
+
+    # Get all curricula for this program
+    curricula = Curriculum.objects.filter(program=program).prefetch_related(
+        'curriculumsubject_set__subject'
+    )
+
+    # Collect all unique subjects across all curricula
+    subjects_set = {}
+    for curriculum in curricula:
+        for cs in curriculum.curriculumsubject_set.all():
+            subject = cs.subject
+            if subject.id not in subjects_set:
+                subjects_set[subject.id] = {
+                    'subject': subject,
+                    'curricula': []
+                }
+            subjects_set[subject.id]['curricula'].append({
+                'curriculum': curriculum,
+                'year_level': cs.year_level,
+                'term_no': cs.term_no
+            })
+
+    program_subjects = list(subjects_set.values())
+
+    context = {
+        'program': program,
+        'program_subjects': program_subjects,
+        'curricula_count': curricula.count(),
+    }
+    return render(request, 'registrar/academics/program_subjects_modal.html', context)
+
+
+@role_required('registrar')
+def program_subject_archive(request, program_pk, subject_pk):
+    """Archive a subject from a program"""
+    if request.method == 'POST':
+        try:
+            program = get_object_or_404(Program, pk=program_pk)
+            subject = get_object_or_404(Subject, pk=subject_pk)
+
+            old_values = {
+                'archived': subject.archived,
+                'program': program.name,
+            }
+
+            # Archive the subject
+            subject.archived = True
+            subject.save()
+
+            # Audit trail
+            AuditTrail.objects.create(
+                actor=request.user,
+                action='archive',
+                entity='Subject',
+                entity_id=subject.id,
+                old_value_json=old_values,
+                new_value_json={
+                    'archived': True,
+                    'program': program.name,
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Subject "{subject.code}" has been archived successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+
 # ==================== CURRICULA ====================
 @role_required('registrar')
 def curricula_list(request):
@@ -236,15 +313,50 @@ def curriculum_create(request):
 
 @role_required('registrar')
 def curriculum_detail(request, pk):
-    """View curriculum details with subjects"""
+    """View curriculum details with subjects, hierarchy, and prerequisite map"""
     curriculum = get_object_or_404(Curriculum.objects.select_related('program'), pk=pk)
     curriculum_subjects = CurriculumSubject.objects.filter(
         curriculum=curriculum
-    ).select_related('subject').order_by('year_level', 'term_no')
+    ).select_related('subject').prefetch_related('subject__subject_prereqs__prereq_subject').order_by('year_level', 'term_no')
+
+    # Build hierarchy data grouped by year and semester
+    hierarchy = {}
+    for cs in curriculum_subjects:
+        year_key = f"Year {cs.year_level}"
+        if cs.term_no == 1:
+            sem_key = "1st Semester"
+        elif cs.term_no == 2:
+            sem_key = "2nd Semester"
+        else:
+            sem_key = "Summer"
+
+        term_key = f"{year_key} - {sem_key}"
+
+        if term_key not in hierarchy:
+            hierarchy[term_key] = {
+                'year_level': cs.year_level,
+                'term_no': cs.term_no,
+                'subjects': []
+            }
+
+        hierarchy[term_key]['subjects'].append(cs)
+
+    # Build prerequisite map
+    prerequisite_map = {}
+    for cs in curriculum_subjects:
+        subject = cs.subject
+        prereqs = subject.subject_prereqs.all()
+        if prereqs:
+            prerequisite_map[subject.id] = {
+                'subject': subject,
+                'prerequisites': [p.prereq_subject for p in prereqs]
+            }
 
     return render(request, 'registrar/academics/curriculum_detail.html', {
         'curriculum': curriculum,
-        'curriculum_subjects': curriculum_subjects
+        'curriculum_subjects': curriculum_subjects,
+        'hierarchy': hierarchy,
+        'prerequisite_map': prerequisite_map
     })
 
 
@@ -419,12 +531,20 @@ def curriculum_toggle_active(request, pk):
 # ==================== SUBJECTS ====================
 @role_required('registrar')
 def subjects_list(request):
-    """List all subjects"""
+    """List all subjects (including archived for admin purposes)"""
+    show_archived = request.GET.get('show_archived', 'false') == 'true'
+
     subjects = Subject.objects.select_related('program').prefetch_related('subject_prereqs__prereq_subject').all().order_by('-created_at')
+
+    # Filter out archived subjects unless explicitly showing them
+    if not show_archived:
+        subjects = subjects.filter(archived=False)
+
     programs = Program.objects.all()
     return render(request, 'registrar/academics/subjects_list.html', {
         'subjects': subjects,
-        'programs': programs
+        'programs': programs,
+        'show_archived': show_archived
     })
 
 
@@ -622,13 +742,14 @@ def subject_delete(request, pk):
 
 @role_required('registrar')
 def subject_search(request):
-    """Live search for subjects (used for prerequisites)"""
+    """Live search for subjects (used for prerequisites) - excludes archived subjects"""
     query = request.GET.get('q', '')
     exclude_id = request.GET.get('exclude', None)
 
     subjects = Subject.objects.filter(
         Q(code__icontains=query) | Q(title__icontains=query),
-        active=True
+        active=True,
+        archived=False
     )
 
     # Exclude the subject being edited (can't be its own prerequisite)
