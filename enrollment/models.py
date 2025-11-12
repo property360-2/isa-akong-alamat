@@ -10,14 +10,16 @@ class Student(models.Model):
         ('graduated', 'Graduated'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    program = models.ForeignKey(Program, on_delete=models.CASCADE)
-    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, null=True, blank=True)
+    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='inactive')
+    onboarding_complete = models.BooleanField(default=False)
     documents_json = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} ({self.program.name})"
+        program_name = self.program.name if self.program else "No Program"
+        return f"{self.user.username} ({program_name})"
 
 
 class Term(models.Model):

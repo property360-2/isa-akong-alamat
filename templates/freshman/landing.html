@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Freshman Enrollment - Richwell College Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <div class="max-w-lg w-full">
+        <!-- Welcome Card -->
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                    Welcome to Richwell College
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Freshman Enrollment Portal
+                </p>
+            </div>
+
+            <!-- Hero Section -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-8 text-white mb-8">
+                <div class="flex items-start">
+                    <svg class="w-12 h-12 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z"/>
+                    </svg>
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2">Start Your Journey</h2>
+                        <p class="text-sm text-blue-100">
+                            Begin your enrollment process today. It's quick, simple, and automated.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8">
+                <p class="text-sm text-gray-700">
+                    <strong>New to Richwell?</strong> Create your account and select your program. Your curriculum and subjects will be auto-enrolled based on your program requirements.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3 mb-8">
+                <a href="{% url 'freshman:register' %}"
+                   class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    Start Enrollment
+                </a>
+            </div>
+
+            <!-- Alternative for Transferees -->
+            <div class="border-t border-gray-200 pt-8">
+                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                    <p class="text-sm text-gray-600 mb-3">
+                        <strong>Are you a transferee?</strong>
+                    </p>
+                    <p class="text-xs text-gray-500 mb-3">
+                        Please visit the Registrar's office for specialized enrollment assistance.
+                    </p>
+                    <a href="{% url 'login' %}"
+                       class="text-sm font-medium text-primary hover:text-blue-700">
+                        Staff Login →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="text-center mt-8">
+            <p class="text-sm text-gray-600">
+                Already have an account?
+                <a href="{% url 'login' %}" class="font-medium text-primary hover:text-blue-700">
+                    Sign in here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

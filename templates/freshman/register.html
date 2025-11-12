@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Credentials - Richwell College Enrollment{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
+    <div class="max-w-md w-full">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
+            <p class="text-gray-600">Step 1 of 4 in the enrollment process</p>
+        </div>
+
+        <!-- Error Messages -->
+        {% if errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <svg class="w-5 h-5 text-red-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800 mb-2">Please fix the following errors:</h3>
+                    <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                        {% for error in errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Registration Form -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+
+                <!-- Full Name -->
+                <div>
+                    <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text"
+                           name="full_name"
+                           id="full_name"
+                           value="{{ form_data.full_name|default:'' }}"
+                           placeholder="Juan Dela Cruz"
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email"
+                           name="email"
+                           id="email"
+                           value="{{ form_data.email|default:'' }}"
+                           placeholder="juan@example.com"
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Used for account recovery</p>
+                </div>
+
+                <!-- Mobile Number -->
+                <div>
+                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">
+                        Mobile Number <span class="text-gray-400">(Optional)</span>
+                    </label>
+                    <input type="tel"
+                           name="mobile"
+                           id="mobile"
+                           value="{{ form_data.mobile|default:'' }}"
+                           placeholder="09XX XXXXXXX"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                        Desired Username <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text"
+                           name="username"
+                           id="username"
+                           value="{{ form_data.username|default:'' }}"
+                           placeholder="juandelac"
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Can be changed later in your portal</p>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Password <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password"
+                           name="password"
+                           id="password"
+                           placeholder="••••••••"
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">At least 8 characters recommended</p>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Confirm Password <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password"
+                           name="confirm_password"
+                           id="confirm_password"
+                           placeholder="••••••••"
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Freshman Confirmation -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <label class="flex items-start cursor-pointer">
+                        <input type="checkbox"
+                               name="is_freshman"
+                               value="yes"
+                               required
+                               class="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary mt-0.5">
+                        <span class="ml-3 text-sm text-gray-700">
+                            I confirm that I am a <strong>new freshman applicant</strong> to Richwell College
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full px-4 py-3 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                    Create Account & Continue
+                </button>
+
+                <!-- Back Link -->
+                <div class="text-center pt-4 border-t border-gray-200">
+                    <a href="{% url 'freshman:landing' %}"
+                       class="text-sm text-gray-600 hover:text-gray-900">
+                        ← Back to Home
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Already Have Account -->
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600">
+                Already have an account?
+                <a href="{% url 'login' %}" class="font-medium text-primary hover:text-blue-700">
+                    Sign in here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

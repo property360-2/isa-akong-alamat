@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Account - Richwell College Enrollment{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Review Your Information</h1>
+            <p class="text-lg text-gray-600">Step 3 of 4 in the enrollment process</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-8 space-y-4">
+            {% for message in messages %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-red-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm text-red-800">{{ message }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Review Card -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <!-- Info Sections -->
+            <div class="space-y-8">
+                <!-- Personal Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Personal Information
+                    </h2>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Full Name</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                {{ student.user.first_name }} {{ student.user.last_name }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Email</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                {{ student.user.email }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Username</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                @{{ student.user.username }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-gray-200">
+
+                <!-- Academic Information -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Academic Information
+                    </h2>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Program</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                {{ student.program.name }}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Level: {{ student.program.get_level_display }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Curriculum</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                {{ student.curriculum.version }}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                SY: {{ student.curriculum.effective_sy }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Year Level</p>
+                            <p class="text-lg font-medium text-gray-900">1st Year</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Semester</p>
+                            <p class="text-lg font-medium text-gray-900">1st Semester</p>
+                        </div>
+                        {% if active_term %}
+                        <div class="col-span-2">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Academic Term</p>
+                            <p class="text-lg font-medium text-gray-900">
+                                {{ active_term.name }}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ active_term.start_date }} to {{ active_term.end_date }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="border-gray-200">
+
+                <!-- Important Notes -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-blue-900 mb-2">Before You Continue</h3>
+                    <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                        <li>Review all information carefully</li>
+                        <li>You can edit your username and password later in your portal</li>
+                        <li>Your curriculum subjects will be automatically enrolled</li>
+                        <li>This enrollment is for the <strong>1st Year, 1st Semester</strong> only</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="{% url 'freshman:select_program' %}"
+               class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors text-center">
+                ← Change Program
+            </a>
+            <form method="POST" class="flex-1">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors">
+                    Confirm & Continue →
+                </button>
+            </form>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="mt-12">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-semibold mb-2">✓</div>
+                    <p class="text-xs text-gray-600">Account</p>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-semibold mb-2">✓</div>
+                    <p class="text-xs text-gray-600">Program</p>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-semibold mb-2">3</div>
+                    <p class="text-xs text-gray-600">Review</p>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-semibold mb-2">4</div>
+                    <p class="text-xs text-gray-600">Subjects</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
