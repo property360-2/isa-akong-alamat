@@ -6,6 +6,7 @@ app_name = 'enrollment'
 urlpatterns = [
     # Terms
     path('terms/', views.terms_list, name='terms_list'),
+    path('terms/archived/', views.archived_terms_list, name='archived_terms_list'),
     path('terms/create/', views.term_create, name='term_create'),
     path('terms/<int:pk>/update/', views.term_update, name='term_update'),
     path('terms/<int:pk>/activate/', views.term_activate, name='term_activate'),

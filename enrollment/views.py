@@ -32,6 +32,20 @@ def terms_list(request):
 
 
 @role_required('registrar')
+def archived_terms_list(request):
+    """
+    List all archived terms for recovery/review purposes.
+    """
+    archived_terms = Term.objects.filter(archived=True).order_by('level', '-start_date')
+
+    context = {
+        'archived_terms': archived_terms,
+        'level_choices': Term.LEVEL_CHOICES,
+    }
+    return render(request, 'registrar/terms/archived_terms_list.html', context)
+
+
+@role_required('registrar')
 def term_create(request):
     """
     Create a new term.

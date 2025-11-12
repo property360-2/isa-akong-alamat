@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Archived Terms - Richwell Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Archived Terms</h1>
+            <p class="mt-2 text-sm text-gray-600">Manage archived academic terms</p>
+        </div>
+        <a href="{% url 'enrollment:terms_list' %}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+            <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back to Terms
+        </a>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">
+                    Archived terms
+                </h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>
+                        These terms have been archived and are hidden from the normal term list. You can restore them if needed.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archived Terms Table -->
+    <div class="bg-white shadow rounded-lg border border-gray-200">
+        <div class="overflow-x-auto">
+            {% if archived_terms %}
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Term Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add/Drop Deadline</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade Deadline</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for term in archived_terms %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ term.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if term.level == 'SHS' %}bg-blue-100 text-blue-800
+                                {% elif term.level == 'Bachelor' %}bg-purple-100 text-purple-800
+                                {% else %}bg-indigo-100 text-indigo-800{% endif %}">
+                                {{ term.get_level_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.start_date }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.end_date }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.add_drop_deadline|default:"Not set" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ term.grade_encoding_deadline|default:"Not set" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <a href="{% url 'enrollment:term_unarchive' term.pk %}"
+                               class="text-blue-600 hover:text-blue-900"
+                               title="Unarchive">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A11.011 11.011 0 003.03 15.192a1 1 0 001.945-.494c2.526-4.71 8.236-7.244 13.425-5.622.572.17 1.156.363 1.73.575a1 1 0 00.57-1.93c-.67-.22-1.334-.437-1.992-.612zM9 12.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                                </svg>
+                            </a>
+
+                            <a href="{% url 'enrollment:term_delete' term.pk %}"
+                               onclick="return confirm('Are you sure you want to permanently delete this archived term?')"
+                               class="text-red-600 hover:text-red-900"
+                               title="Delete">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8a2 2 0 012-2h6a2 2 0 012 2m0 0h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2v-10a2 2 0 012-2h2m3-4V5a2 2 0 10-4 0v2m4 0V5a2 2 0 10-4 0v2"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No archived terms</h3>
+                <p class="mt-1 text-sm text-gray-500">You don't have any archived terms yet.</p>
+                <div class="mt-6">
+                    <a href="{% url 'enrollment:terms_list' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back to Terms
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
