@@ -130,22 +130,30 @@ def student_dashboard(request):
     """
     Student dashboard with enrollment and grade viewer.
     """
-    from enrollment.models import Student, StudentSubject
+    from enrollment.models import Student, StudentSubject, Enrollment, Term
 
     try:
         student = Student.objects.get(user=request.user)
         enrolled_subjects = StudentSubject.objects.filter(student=student).select_related('subject', 'term', 'section')
 
+        # Check if student has active term enrollment
+        active_term = Term.objects.filter(is_active=True, archived=False, level=student.program.level).first()
+        has_active_enrollment = False
+        if active_term:
+            has_active_enrollment = Enrollment.objects.filter(student=student, term=active_term).exists()
+
         context = {
             'student': student,
             'enrolled_subjects': enrolled_subjects,
             'total_units': sum([ss.subject.units for ss in enrolled_subjects if ss.status == 'enrolled']),
+            'has_active_enrollment': has_active_enrollment,
         }
     except Student.DoesNotExist:
         context = {
             'student': None,
             'enrolled_subjects': [],
             'total_units': 0,
+            'has_active_enrollment': False,
         }
 
     return render(request, 'dashboards/student_dashboard.html', context)
