@@ -92,8 +92,8 @@ class StudentSubject(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     term = models.ForeignKey(Term, on_delete=models.CASCADE)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    professor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'professor'})
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, null=True, blank=True)
+    professor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'professor'}, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='enrolled')
     created_at = models.DateTimeField(auto_now_add=True)
 
