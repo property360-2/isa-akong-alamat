@@ -10,7 +10,11 @@
       "Bash(python test_registrar_simple.py:*)",
       "Bash(python:*)",
       "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\enrollment\\migrations\")",
-      "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\templates\\student\")"
+      "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\templates\\student\")",
+      "Bash(nul)",
+      "Bash(dir /s /b *.py 2)",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\")"
     ],
     "deny": [],
     "ask": []

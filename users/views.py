@@ -129,24 +129,35 @@ def professor_dashboard(request):
 def student_dashboard(request):
     """
     Student dashboard with enrollment and grade viewer.
+    Shows enrollment eligibility based on past term completion and grade posting.
     """
     from enrollment.models import Student, StudentSubject, Enrollment, Term
+    from enrollment.student_enrollment_views import can_student_enroll
 
     try:
         student = Student.objects.get(user=request.user)
         enrolled_subjects = StudentSubject.objects.filter(student=student).select_related('subject', 'term', 'section')
 
-        # Check if student has active term enrollment
+        # Check enrollment eligibility with comprehensive checks
         active_term = Term.objects.filter(is_active=True, archived=False, level=student.program.level).first()
-        has_active_enrollment = False
+
+        can_enroll = False
+        enrollment_status = None
+        enrollment_message = None
+        enrollment_details = {}
+
         if active_term:
-            has_active_enrollment = Enrollment.objects.filter(student=student, term=active_term).exists()
+            can_enroll, enrollment_message, enrollment_details = can_student_enroll(student, active_term)
 
         context = {
             'student': student,
             'enrolled_subjects': enrolled_subjects,
             'total_units': sum([ss.subject.units for ss in enrolled_subjects if ss.status == 'enrolled']),
-            'has_active_enrollment': has_active_enrollment,
+            'has_active_enrollment': not can_enroll and enrollment_details.get('reason') == 'already_enrolled',
+            'can_enroll': can_enroll,
+            'enrollment_message': enrollment_message,
+            'enrollment_details': enrollment_details,
+            'active_term': active_term,
         }
     except Student.DoesNotExist:
         context = {
@@ -154,6 +165,10 @@ def student_dashboard(request):
             'enrolled_subjects': [],
             'total_units': 0,
             'has_active_enrollment': False,
+            'can_enroll': False,
+            'enrollment_message': None,
+            'enrollment_details': {},
+            'active_term': None,
         }
 
     return render(request, 'dashboards/student_dashboard.html', context)

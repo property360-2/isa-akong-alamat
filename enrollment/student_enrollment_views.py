@@ -13,6 +13,7 @@ from enrollment.models import Student, Term, StudentSubject, Enrollment
 from academics.models import Subject, CurriculumSubject, Prereq, Program
 from audit.models import AuditTrail
 from grades.models import Grade
+from settingsapp.models import Setting
 import json
 from decimal import Decimal
 
@@ -153,7 +154,7 @@ def check_prerequisite_with_grades(student, subject, passing_grade=None):
         if completed_record:
             continue
 
-        # Check if incomplete with passing grade
+        # Check if incomplete - this BLOCKS enrollment regardless of grade
         inc_record = StudentSubject.objects.filter(
             student=student,
             subject=prereq_subject,
@@ -163,14 +164,22 @@ def check_prerequisite_with_grades(student, subject, passing_grade=None):
         if inc_record:
             grade = Grade.objects.filter(student_subject=inc_record).first()
             if grade and float(grade.grade) >= passing_grade:
+                # INC with passing grade - record it but still block enrollment
                 with_inc.append({
                     'subject': prereq_subject,
                     'grade': grade.grade,
                     'status': 'incomplete_but_passing'
                 })
+                # Continue to treat this as blocking (don't allow enrollment)
+                # Student must complete the INC before proceeding
+                unmet.append(prereq_subject)
+                continue
+            else:
+                # INC with failing grade
+                unmet.append(prereq_subject)
                 continue
 
-        # Prerequisite not met
+        # Not completed, not INC - prerequisite not met
         unmet.append(prereq_subject)
 
     return {
@@ -182,14 +191,21 @@ def check_prerequisite_with_grades(student, subject, passing_grade=None):
 
 def get_available_subjects_for_student(student, active_term, include_inc_path=False):
     """
-    Get available subjects for student to enroll in.
+    Get all curriculum subjects for student with detailed availability info.
 
-    If include_inc_path=False: Only show subjects at student's current level
-                               where all prerequisites are 'completed'.
-    If include_inc_path=True: Show subjects at student's current level
-                              and one level ahead if student has incomplete subjects.
+    Shows ALL subjects at student's curriculum level with reasons why they can/can't take them.
 
-    Returns list of dicts with subject info and prerequisite status.
+    Reasons:
+    - 'ready': Can enroll (all prerequisites met)
+    - 'inc_prerequisite': Blocked by incomplete prerequisite (shows which one and grade)
+    - 'unmet_prerequisite': Blocked by unmet prerequisite (not taken or failed)
+    - 'already_taken': Already took this subject in a past term
+    - 'future_level': Not yet at this curriculum level
+
+    If include_inc_path=True: Show current level + one level ahead if student has incomplete subjects.
+    If include_inc_path=False: Only show current level subjects.
+
+    Returns list of dicts with subject info, status, and blocking reasons.
     """
     # Get student's current level
     year_level, term_no = get_student_current_level(student)
@@ -198,52 +214,235 @@ def get_available_subjects_for_student(student, active_term, include_inc_path=Fa
     incomplete_subjects = get_incomplete_subjects(student)
     has_inc = incomplete_subjects.exists()
 
-    # Start with current level
-    available_levels = [(year_level, term_no)]
-
-    # If student has incomplete subjects, also show next level
+    # Determine visible levels
+    visible_levels = [(year_level, term_no)]
     if has_inc and include_inc_path:
         if term_no == 2:
-            available_levels.append((year_level + 1, 1))
+            visible_levels.append((year_level + 1, 1))
 
-    # Get curriculum subjects for available levels
-    curriculum_subjects = CurriculumSubject.objects.filter(
-        curriculum=student.curriculum,
-        year_level__in=[level[0] for level in available_levels],
-        term_no__in=[level[1] for level in available_levels]
-    ).select_related('subject')
+    # Get ALL curriculum subjects (not just visible levels) to show full curriculum
+    all_curriculum_subjects = CurriculumSubject.objects.filter(
+        curriculum=student.curriculum
+    ).select_related('subject').order_by('year_level', 'term_no', 'subject__code')
 
-    # Check prerequisite status for each subject
+    # Check past completions to identify already taken subjects
+    completed_subject_ids = StudentSubject.objects.filter(
+        student=student,
+        status__in=['completed', 'failed', 'inc', 'repeat_required']
+    ).values_list('subject_id', flat=True).distinct()
+
     subjects_info = []
     passing_grade = float(student.program.passing_grade)
 
-    for cs in curriculum_subjects:
+    for cs in all_curriculum_subjects:
         subject = cs.subject
+        curr_level = (cs.year_level, cs.term_no)
 
-        # Check if already enrolled/taken
-        already_taken = StudentSubject.objects.filter(
+        # Initialize subject info
+        subject_info = {
+            'subject': subject,
+            'curriculum_level': curr_level,
+            'current_level': (year_level, term_no),
+            'is_visible_level': curr_level in visible_levels,
+            'can_take': False,
+            'is_available': False,
+            'status': 'future_level',  # Default status
+            'blocking_reason': None,
+            'blocking_inc_subject': None,  # For INC blocking
+            'blocking_inc_grade': None,
+            'unmet_prereqs': [],
+            'with_inc_prereqs': [],
+        }
+
+        # Check if already taken in past
+        if subject.id in completed_subject_ids:
+            subject_info['status'] = 'already_taken'
+            subject_info['blocking_reason'] = 'Already completed in a past term'
+            subject_info['can_take'] = False
+            subject_info['is_available'] = False
+            subjects_info.append(subject_info)
+            continue
+
+        # Check if already enrolled in current term
+        already_enrolled_current = StudentSubject.objects.filter(
             student=student,
             subject=subject,
             term=active_term
         ).exists()
 
-        if already_taken:
+        if already_enrolled_current:
+            # Skip - already in current enrollment selection
             continue
 
-        # Check prerequisites
+        # If not at this level yet, mark as future
+        if curr_level not in visible_levels:
+            subject_info['status'] = 'future_level'
+            subject_info['blocking_reason'] = f'Available at Year {curr_level[0]}, Semester {curr_level[1]}'
+            subjects_info.append(subject_info)
+            continue
+
+        # At this level - check prerequisites
         prereq_check = check_prerequisite_with_grades(student, subject, passing_grade)
 
-        subjects_info.append({
-            'subject': subject,
-            'curriculum_level': (cs.year_level, cs.term_no),
-            'current_level': (year_level, term_no),
-            'can_take': prereq_check['can_take'],
-            'unmet_prereqs': prereq_check['unmet'],
-            'with_inc_prereqs': prereq_check['with_inc'],
-            'is_available': prereq_check['can_take'],
-        })
+        subject_info['unmet_prereqs'] = prereq_check['unmet']
+        subject_info['with_inc_prereqs'] = prereq_check['with_inc']
+
+        if prereq_check['can_take']:
+            # All prerequisites are met (and none are INC)
+            subject_info['status'] = 'ready'
+            subject_info['can_take'] = True
+            subject_info['is_available'] = True
+        else:
+            # Prerequisites NOT met
+            if prereq_check['with_inc']:
+                # Has incomplete prerequisites (even if passing grade)
+                subject_info['status'] = 'inc_prerequisite'
+                subject_info['can_take'] = False
+                subject_info['is_available'] = False
+                # Get the first INC blocking subject for display
+                inc_info = prereq_check['with_inc'][0]
+                subject_info['blocking_reason'] = f"Blocked by incomplete prerequisite: {inc_info['subject'].code} (Grade: {inc_info['grade']})"
+                subject_info['blocking_inc_subject'] = inc_info
+            else:
+                # Has unmet prerequisites (not taken, failed, or other reasons)
+                subject_info['status'] = 'unmet_prerequisite'
+                subject_info['can_take'] = False
+                subject_info['is_available'] = False
+                unmet_list = ', '.join([f"{s.code}" for s in prereq_check['unmet']])
+                subject_info['blocking_reason'] = f"Blocked: Requires {unmet_list}"
+
+        subjects_info.append(subject_info)
 
     return subjects_info, has_inc
+
+
+def can_student_enroll(student, active_term):
+    """
+    Comprehensive check for student enrollment eligibility.
+
+    Validates that:
+    1. Enrollment is open (Settings.enrollment_open = true)
+    2. Student has at least one completed term with all subjects graded
+    3. Student doesn't already have an enrollment for the active term
+    4. Student status is 'active'
+
+    Returns:
+        tuple: (can_enroll: bool, message: str, enrollment_details: dict)
+
+    Examples:
+        can_enroll, message, details = can_student_enroll(student, term)
+        if can_enroll:
+            # Proceed with enrollment
+        else:
+            # Show message to student
+            print(message)
+    """
+
+    # Check 1: Is enrollment open?
+    enrollment_setting = Setting.objects.filter(key_name='enrollment_open').first()
+    if not enrollment_setting or enrollment_setting.value_text.lower() != 'true':
+        return False, 'Enrollment is currently closed. Please check back later.', {
+            'reason': 'enrollment_closed',
+            'open': False
+        }
+
+    # Check 2: Is student active?
+    if student.status != 'active':
+        return False, f'Your account status is {student.status}. Only active students can enroll.', {
+            'reason': 'student_not_active',
+            'student_status': student.status
+        }
+
+    # Check 3: Does student already have an enrollment for this term with subjects?
+    existing_enrollment = Enrollment.objects.filter(
+        student=student,
+        term=active_term
+    ).first()
+
+    if existing_enrollment:
+        # Check if there are actually StudentSubject records for this enrollment
+        has_subjects = StudentSubject.objects.filter(
+            student=student,
+            term=active_term
+        ).exists()
+
+        if has_subjects:
+            # Real enrollment with subjects
+            return False, 'You have already enrolled for this term.', {
+                'reason': 'already_enrolled',
+                'term': active_term.name
+            }
+        else:
+            # Orphaned Enrollment record with no subjects - delete it and allow re-enrollment
+            existing_enrollment.delete()
+            # Continue with normal flow
+
+    # Check 4: Get all past enrollments
+    past_enrollments = Enrollment.objects.filter(
+        student=student,
+        term__is_active=False
+    ).order_by('-term__end_date')
+
+    # If no past enrollments, student is brand new (can only enroll if Year 1, Sem 1)
+    if not past_enrollments.exists():
+        current_year, current_sem = get_student_current_level(student)
+        if current_year == 1 and current_sem == 1:
+            # New student - can proceed
+            return True, '', {
+                'reason': 'new_student',
+                'can_proceed': True
+            }
+        else:
+            # This shouldn't happen but handle it
+            return False, 'Your enrollment status cannot be determined. Please contact registrar.', {
+                'reason': 'enrollment_status_error',
+                'year': current_year,
+                'sem': current_sem
+            }
+
+    # Check 5: Get the most recent past enrollment
+    latest_past_enrollment = past_enrollments.first()
+    latest_past_term = latest_past_enrollment.term
+
+    # Get all StudentSubject records for the most recent past term
+    past_subjects = StudentSubject.objects.filter(
+        student=student,
+        term=latest_past_term
+    )
+
+    if not past_subjects.exists():
+        # No subjects in past term - can't happen but handle it
+        return False, 'No enrollment history found. Please contact registrar.', {
+            'reason': 'no_past_subjects'
+        }
+
+    # Check 6: Verify ALL past subjects have grades
+    ungraded_subjects = []
+    for subject_record in past_subjects:
+        grade = Grade.objects.filter(student_subject=subject_record).first()
+        if not grade:
+            ungraded_subjects.append({
+                'code': subject_record.subject.code,
+                'title': subject_record.subject.title,
+                'status': subject_record.status
+            })
+
+    if ungraded_subjects:
+        subject_list = ', '.join([f"{s['code']} ({s['status']})" for s in ungraded_subjects])
+        return False, f'You cannot enroll yet. The following subjects from {latest_past_term.name} are still ungraded: {subject_list}', {
+            'reason': 'ungraded_subjects',
+            'term': latest_past_term.name,
+            'ungraded': ungraded_subjects,
+            'ungraded_count': len(ungraded_subjects)
+        }
+
+    # All checks passed!
+    return True, '', {
+        'reason': 'eligible',
+        'can_proceed': True,
+        'latest_past_term': latest_past_term.name,
+        'subject_count': past_subjects.count()
+    }
 
 
 # ==================== VIEWS ====================
@@ -272,11 +471,15 @@ def student_enroll_subjects(request):
         messages.error(request, 'No active term available.')
         return redirect('student_dashboard')
 
-    # Check if already enrolled for this term
-    existing_enrollment = Enrollment.objects.filter(student=student, term=active_term).first()
-    if existing_enrollment:
-        messages.info(request, 'You have already completed enrollment for this term.')
-        return redirect('enrollment:view_enrollment', term_id=active_term.id)
+    # Check enrollment eligibility
+    can_enroll, error_message, details = can_student_enroll(student, active_term)
+    if not can_enroll:
+        if details.get('reason') == 'already_enrolled':
+            messages.info(request, error_message)
+            return redirect('enrollment:view_enrollment', term_id=active_term.id)
+        else:
+            messages.error(request, error_message)
+            return redirect('student_dashboard')
 
     # Get student's current level
     year_level, term_no = get_student_current_level(student)

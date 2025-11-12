@@ -1,0 +1,100 @@
+<tr class="{% if not item.is_available and not item.is_visible_level %}opacity-60{% elif item.status == 'inc_prerequisite' %}bg-yellow-50{% elif not item.is_available %}bg-gray-50{% endif %}" data-subject-id="{{ item.subject.id }}" data-units="{{ item.subject.units }}" data-available="{{ item.is_available }}">
+    <td class="px-4 py-3">
+        {% if not no_checkbox %}
+        <input type="checkbox" name="selected_subjects" value="{{ item.subject.id }}"
+               class="subject-checkbox rounded"
+               {% if item.subject.id|stringformat:"s" in selected_subject_ids %}checked{% endif %}
+               {% if not item.is_available %}disabled{% endif %} />
+        {% endif %}
+    </td>
+    <td class="px-4 py-3 text-sm font-medium {% if not item.is_available %}text-gray-600{% else %}text-gray-900{% endif %}">{{ item.subject.code }}</td>
+    <td class="px-4 py-3 text-sm {% if not item.is_available %}text-gray-600{% else %}text-gray-700{% endif %}">{{ item.subject.title }}</td>
+    <td class="px-4 py-3 text-center text-sm {% if not item.is_available %}text-gray-600{% else %}text-gray-900{% endif %}">{{ item.subject.units }}</td>
+    <td class="px-4 py-3 text-center">
+        {% if item.is_available %}
+            {% if item.status == 'ready' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                Ready
+            </span>
+            {% endif %}
+        {% elif item.status == 'future_level' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                </svg>
+                Future
+            </span>
+        {% elif item.status == 'already_taken' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 3.062v6.72a3.066 3.066 0 01-2.812 3.062 3.066 3.066 0 01-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 01-1.745-.723 3.066 3.066 0 01-2.812-3.062v-6.72a3.066 3.066 0 012.812-3.062zM9 5a1 1 0 100 2 1 1 0 000-2zm0 7a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+                </svg>
+                Done
+            </span>
+        {% elif item.status == 'inc_prerequisite' %}
+            <div class="inline-block" onclick="showPrerequisiteDetails({{ item.subject.id }})" title="Click to see details">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 cursor-help">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    INC Blocking
+                </span>
+            </div>
+        {% else %}
+            <div class="inline-block" onclick="showPrerequisiteDetails({{ item.subject.id }})" title="Click to see details">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 cursor-help">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    Blocked
+                </span>
+            </div>
+        {% endif %}
+    </td>
+</tr>
+
+<!-- Blocking Reason Row -->
+{% if item.blocking_reason and not item.is_available %}
+<tr class="hidden bg-yellow-100 border-l-4 border-yellow-500" id="blocking-reason-{{ item.subject.id }}">
+    <td colspan="5" class="px-4 py-2">
+        <p class="text-sm text-yellow-800"><strong>Why blocked:</strong> {{ item.blocking_reason }}</p>
+        {% if item.blocking_inc_subject %}
+        <p class="text-xs text-yellow-700 mt-1">
+            <strong>INC Subject:</strong> {{ item.blocking_inc_subject.subject.code }} (Grade: {{ item.blocking_inc_subject.grade }})
+            <span class="text-yellow-600 ml-2">- Complete this to unlock</span>
+        </p>
+        {% endif %}
+    </td>
+</tr>
+{% endif %}
+
+<!-- Hidden detail rows for prerequisites -->
+{% if item.unmet_prereqs %}
+<tr class="hidden bg-red-50 prerequisite-details" id="prereq-details-{{ item.subject.id }}">
+    <td colspan="5" class="px-4 py-3">
+        <p class="text-sm font-semibold text-red-900 mb-2">Unmet Prerequisites:</p>
+        <ul class="text-sm text-red-800 space-y-1">
+            {% for prereq in item.unmet_prereqs %}
+            <li>• {{ prereq.code }} - {{ prereq.title }}</li>
+            {% endfor %}
+        </ul>
+    </td>
+</tr>
+{% endif %}
+
+{% if item.with_inc_prereqs %}
+<tr class="hidden bg-blue-50 prerequisite-details" id="prereq-inc-details-{{ item.subject.id }}">
+    <td colspan="5" class="px-4 py-3">
+        <p class="text-sm font-semibold text-blue-900 mb-2">Incomplete (Passing) Prerequisites:</p>
+        <ul class="text-sm text-blue-800 space-y-1">
+            {% for prereq in item.with_inc_prereqs %}
+            <li>• {{ prereq.subject.code }} - {{ prereq.subject.title }} (Grade: {{ prereq.grade }})</li>
+            {% endfor %}
+        </ul>
+    </td>
+</tr>
+{% endif %}
