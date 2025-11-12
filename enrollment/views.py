@@ -296,6 +296,11 @@ def sections_list(request):
         'selected_term_id': int(selected_term_id) if selected_term_id else None,
         'active_term': active_term,
     }
+
+    # Check if this is an HTMX request for the content only
+    if request.headers.get('HX-Request') == 'true':
+        return render(request, 'registrar/sections/sections_list_content.html', context)
+
     return render(request, 'registrar/sections/sections_list.html', context)
 
 

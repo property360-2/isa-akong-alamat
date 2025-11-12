@@ -362,21 +362,16 @@ def curriculum_detail(request, pk):
 
 @role_required('registrar')
 def curriculum_add_subjects(request, pk):
-    """Add subjects to a curriculum (single or bulk)"""
+    """Add subjects to a curriculum using their recommended year/semester"""
     curriculum = get_object_or_404(Curriculum, pk=pk)
 
     if request.method == 'POST':
         try:
             subject_ids = request.POST.getlist('subject_ids[]')
-            year_level = request.POST.get('year_level')
-            term_no = request.POST.get('term_no')
 
             # Validation
-            if not all([subject_ids, year_level, term_no]):
-                return JsonResponse({'success': False, 'message': 'Subject, Year Level, and Term are required'}, status=400)
-
-            year_level = int(year_level)
-            term_no = int(term_no)
+            if not subject_ids:
+                return JsonResponse({'success': False, 'message': 'At least one subject must be selected'}, status=400)
 
             # Get subjects and validate they belong to the curriculum's program
             subjects = Subject.objects.filter(
@@ -392,11 +387,15 @@ def curriculum_add_subjects(request, pk):
                     'message': 'Some selected subjects do not belong to this curriculum\'s program or are inactive'
                 }, status=400)
 
-            # Add subjects to curriculum
+            # Add subjects to curriculum using their recommended year/semester
             added_count = 0
             for subject in subjects:
                 # Check if already exists
                 if not CurriculumSubject.objects.filter(curriculum=curriculum, subject=subject).exists():
+                    # Use subject's recommended year and semester, default to 1st year 1st semester if not set
+                    year_level = subject.recommended_year or 1
+                    term_no = subject.recommended_sem or 1
+
                     CurriculumSubject.objects.create(
                         curriculum=curriculum,
                         subject=subject,
@@ -414,8 +413,6 @@ def curriculum_add_subjects(request, pk):
                 entity_id=curriculum.id,
                 new_value_json={
                     'subject_count': added_count,
-                    'year_level': year_level,
-                    'term_no': term_no,
                 }
             )
 
@@ -441,6 +438,93 @@ def curriculum_add_subjects(request, pk):
         'available_subjects': subjects,
     }
     return render(request, 'registrar/academics/curriculum_add_subjects_modal.html', context)
+
+
+@role_required('registrar')
+def curriculum_remove_subject(request, curriculum_pk, subject_pk):
+    """Remove a subject from a curriculum"""
+    if request.method == 'POST':
+        try:
+            curriculum = get_object_or_404(Curriculum, pk=curriculum_pk)
+            curriculum_subject = get_object_or_404(CurriculumSubject, curriculum=curriculum, pk=subject_pk)
+
+            subject_code = curriculum_subject.subject.code
+            subject_title = curriculum_subject.subject.title
+
+            # Audit trail before deletion
+            AuditTrail.objects.create(
+                actor=request.user,
+                action='remove_subject',
+                entity='Curriculum',
+                entity_id=curriculum.id,
+                old_value_json={
+                    'subject_code': subject_code,
+                    'subject_title': subject_title,
+                    'year_level': curriculum_subject.year_level,
+                    'term_no': curriculum_subject.term_no,
+                }
+            )
+
+            curriculum_subject.delete()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Subject "{subject_code}" removed from curriculum successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+
+@role_required('registrar')
+def curriculum_edit_subject(request, curriculum_pk, subject_pk):
+    """Edit year level and semester for a subject in a curriculum"""
+    curriculum = get_object_or_404(Curriculum, pk=curriculum_pk)
+    curriculum_subject = get_object_or_404(CurriculumSubject, curriculum=curriculum, pk=subject_pk)
+
+    if request.method == 'POST':
+        try:
+            year_level = int(request.POST.get('year_level', curriculum_subject.year_level))
+            term_no = int(request.POST.get('term_no', curriculum_subject.term_no))
+
+            old_values = {
+                'year_level': curriculum_subject.year_level,
+                'term_no': curriculum_subject.term_no,
+            }
+
+            curriculum_subject.year_level = year_level
+            curriculum_subject.term_no = term_no
+            curriculum_subject.save()
+
+            # Audit trail
+            AuditTrail.objects.create(
+                actor=request.user,
+                action='update_subject_placement',
+                entity='Curriculum',
+                entity_id=curriculum.id,
+                old_value_json=old_values,
+                new_value_json={
+                    'year_level': year_level,
+                    'term_no': term_no,
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Subject "{curriculum_subject.subject.code}" placement updated successfully'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    # GET request - show edit modal
+    context = {
+        'curriculum': curriculum,
+        'curriculum_subject': curriculum_subject,
+    }
+    return render(request, 'registrar/academics/curriculum_edit_subject_modal.html', context)
 
 
 @role_required('registrar')
