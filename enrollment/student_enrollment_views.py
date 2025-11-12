@@ -10,18 +10,250 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from enrollment.models import Student, Term, StudentSubject, Enrollment
-from academics.models import Subject, CurriculumSubject, Prereq
+from academics.models import Subject, CurriculumSubject, Prereq, Program
 from audit.models import AuditTrail
+from grades.models import Grade
 import json
 from decimal import Decimal
 
+
+# ==================== HELPER FUNCTIONS ====================
+
+def get_student_grade_history(student):
+    """
+    Get all subjects the student has taken with grades and status.
+    Returns a list of StudentSubject records with related grade data.
+    """
+    past_subjects = StudentSubject.objects.filter(
+        student=student,
+        status__in=['completed', 'failed', 'inc', 'repeat_required']
+    ).select_related('subject', 'term', 'professor').order_by('-term__start_date')
+
+    grade_history = []
+    for ss in past_subjects:
+        grade = Grade.objects.filter(student_subject=ss).first()
+        grade_history.append({
+            'student_subject': ss,
+            'subject': ss.subject,
+            'term': ss.term,
+            'professor': ss.professor,
+            'status': ss.status,
+            'grade': grade.grade if grade else 'Not Posted',
+            'grade_value': float(grade.grade) if grade else None,
+        })
+
+    return grade_history
+
+
+def get_completed_subjects_with_grades(student):
+    """
+    Get all subjects with 'completed' status and their grades.
+    Returns a dict with subject_id as key and grade value as value.
+    """
+    completed = StudentSubject.objects.filter(
+        student=student,
+        status='completed'
+    ).select_related('subject')
+
+    result = {}
+    for ss in completed:
+        grade = Grade.objects.filter(student_subject=ss).first()
+        if grade:
+            result[ss.subject_id] = {
+                'grade_value': float(grade.grade),
+                'subject': ss.subject,
+                'status': 'completed',
+            }
+
+    return result
+
+
+def get_incomplete_subjects(student):
+    """
+    Get all subjects with 'inc' (incomplete) status.
+    Returns a list of StudentSubject records.
+    """
+    return StudentSubject.objects.filter(
+        student=student,
+        status='inc'
+    ).select_related('subject', 'term')
+
+
+def get_student_current_level(student):
+    """
+    Determine the current year/semester level of the student based on
+    their completed/failed subjects.
+
+    Returns (year_level, term_no) tuple.
+    Defaults to (1, 1) for new students.
+    """
+    if not student.curriculum:
+        return (1, 1)
+
+    # Get all subjects the student has taken (completed or failed)
+    taken_subjects = StudentSubject.objects.filter(
+        student=student,
+        status__in=['completed', 'failed']
+    ).values_list('subject_id', flat=True)
+
+    # Get all curriculum subjects taken by this student
+    completed_curriculum = CurriculumSubject.objects.filter(
+        curriculum=student.curriculum,
+        subject_id__in=taken_subjects
+    ).values_list('year_level', 'term_no')
+
+    if not completed_curriculum:
+        return (1, 1)
+
+    # Find the highest year/semester completed
+    max_level = max(completed_curriculum, key=lambda x: (x[0], x[1]))
+    year_level, term_no = max_level
+
+    # Advance to next semester/year
+    if term_no == 1:
+        return (year_level, 2)
+    else:
+        return (year_level + 1, 1)
+
+
+def check_prerequisite_with_grades(student, subject, passing_grade=None):
+    """
+    Check if student has met all prerequisites for a subject.
+    Accepts both 'completed' subjects AND 'inc' subjects where the grade
+    meets or exceeds the passing grade.
+
+    Returns dict with:
+    - 'can_take': bool - whether student can take this subject
+    - 'unmet': list of unmet prerequisite subjects
+    - 'with_inc': list of prerequisites met via incomplete status
+    """
+    if not passing_grade:
+        # Get passing grade from student's program
+        passing_grade = float(student.program.passing_grade)
+
+    # Get all prerequisites for this subject
+    prereqs = Prereq.objects.filter(subject=subject).select_related('prereq_subject')
+
+    if not prereqs.exists():
+        return {'can_take': True, 'unmet': [], 'with_inc': []}
+
+    unmet = []
+    with_inc = []
+
+    for prereq in prereqs:
+        prereq_subject = prereq.prereq_subject
+
+        # Check if completed
+        completed_record = StudentSubject.objects.filter(
+            student=student,
+            subject=prereq_subject,
+            status='completed'
+        ).first()
+
+        if completed_record:
+            continue
+
+        # Check if incomplete with passing grade
+        inc_record = StudentSubject.objects.filter(
+            student=student,
+            subject=prereq_subject,
+            status='inc'
+        ).first()
+
+        if inc_record:
+            grade = Grade.objects.filter(student_subject=inc_record).first()
+            if grade and float(grade.grade) >= passing_grade:
+                with_inc.append({
+                    'subject': prereq_subject,
+                    'grade': grade.grade,
+                    'status': 'incomplete_but_passing'
+                })
+                continue
+
+        # Prerequisite not met
+        unmet.append(prereq_subject)
+
+    return {
+        'can_take': len(unmet) == 0,
+        'unmet': unmet,
+        'with_inc': with_inc,
+    }
+
+
+def get_available_subjects_for_student(student, active_term, include_inc_path=False):
+    """
+    Get available subjects for student to enroll in.
+
+    If include_inc_path=False: Only show subjects at student's current level
+                               where all prerequisites are 'completed'.
+    If include_inc_path=True: Show subjects at student's current level
+                              and one level ahead if student has incomplete subjects.
+
+    Returns list of dicts with subject info and prerequisite status.
+    """
+    # Get student's current level
+    year_level, term_no = get_student_current_level(student)
+
+    # Get incomplete subjects
+    incomplete_subjects = get_incomplete_subjects(student)
+    has_inc = incomplete_subjects.exists()
+
+    # Start with current level
+    available_levels = [(year_level, term_no)]
+
+    # If student has incomplete subjects, also show next level
+    if has_inc and include_inc_path:
+        if term_no == 2:
+            available_levels.append((year_level + 1, 1))
+
+    # Get curriculum subjects for available levels
+    curriculum_subjects = CurriculumSubject.objects.filter(
+        curriculum=student.curriculum,
+        year_level__in=[level[0] for level in available_levels],
+        term_no__in=[level[1] for level in available_levels]
+    ).select_related('subject')
+
+    # Check prerequisite status for each subject
+    subjects_info = []
+    passing_grade = float(student.program.passing_grade)
+
+    for cs in curriculum_subjects:
+        subject = cs.subject
+
+        # Check if already enrolled/taken
+        already_taken = StudentSubject.objects.filter(
+            student=student,
+            subject=subject,
+            term=active_term
+        ).exists()
+
+        if already_taken:
+            continue
+
+        # Check prerequisites
+        prereq_check = check_prerequisite_with_grades(student, subject, passing_grade)
+
+        subjects_info.append({
+            'subject': subject,
+            'curriculum_level': (cs.year_level, cs.term_no),
+            'current_level': (year_level, term_no),
+            'can_take': prereq_check['can_take'],
+            'unmet_prereqs': prereq_check['unmet'],
+            'with_inc_prereqs': prereq_check['with_inc'],
+            'is_available': prereq_check['can_take'],
+        })
+
+    return subjects_info, has_inc
+
+
+# ==================== VIEWS ====================
 
 @login_required
 def student_enroll_subjects(request):
     """
     Subject enrollment view for students.
-    Shows subjects from student's curriculum for 1st year, 1st semester.
-    Students can add/remove subjects with unit limit validation.
+    Shows available subjects based on student's current level and incomplete status.
+    Handles prerequisite checking for both completed and incomplete (but passing) subjects.
     """
     try:
         student = Student.objects.get(user=request.user)
@@ -46,42 +278,36 @@ def student_enroll_subjects(request):
         messages.info(request, 'You have already completed enrollment for this term.')
         return redirect('enrollment:view_enrollment', term_id=active_term.id)
 
-    # Get curriculum subjects for 1st year, 1st semester
-    curriculum_subjects = CurriculumSubject.objects.filter(
-        curriculum=student.curriculum,
-        year_level=1,
-        term_no=1
-    ).select_related('subject')
+    # Get student's current level
+    year_level, term_no = get_student_current_level(student)
 
-    # Get student's completed subjects for prerequisite checking
-    completed_subjects = StudentSubject.objects.filter(
-        student=student,
-        status__in=['completed']
-    ).values_list('subject_id', flat=True)
+    # Get available subjects with prerequisite info
+    available_subjects, has_incomplete = get_available_subjects_for_student(student, active_term, include_inc_path=True)
 
-    # Build subject list with prerequisite info
-    subjects_with_prereqs = []
-    for cs in curriculum_subjects:
-        subject = cs.subject
+    # Get grade history
+    grade_history = get_student_grade_history(student)
 
-        # Get prerequisites
-        prereqs = Prereq.objects.filter(subject=subject).select_related('prereq_subject')
-        prereq_list = [p.prereq_subject for p in prereqs]
-
-        # Check if prerequisites are met
-        unmet_prereqs = [p for p in prereq_list if p.id not in completed_subjects]
-
-        subjects_with_prereqs.append({
-            'subject': subject,
-            'prereqs': prereq_list,
-            'unmet_prereqs': unmet_prereqs,
-            'is_available': len(unmet_prereqs) == 0,
-        })
+    # Get incomplete subjects
+    incomplete_subjects = get_incomplete_subjects(student)
 
     if request.method == 'POST':
         try:
             selected_subject_ids = request.POST.getlist('selected_subjects')
             selected_subject_ids = [int(sid) for sid in selected_subject_ids]
+
+            if not selected_subject_ids:
+                messages.error(request, 'Please select at least one subject.')
+                context = {
+                    'student': student,
+                    'active_term': active_term,
+                    'available_subjects': available_subjects,
+                    'grade_history': grade_history,
+                    'incomplete_subjects': incomplete_subjects,
+                    'has_incomplete': has_incomplete,
+                    'current_level': (year_level, term_no),
+                    'selected_subject_ids': selected_subject_ids,
+                }
+                return render(request, 'student/enroll_subjects.html', context)
 
             # Validate selected subjects
             selected_subjects = Subject.objects.filter(id__in=selected_subject_ids)
@@ -94,22 +320,51 @@ def student_enroll_subjects(request):
                 context = {
                     'student': student,
                     'active_term': active_term,
-                    'subjects_with_prereqs': subjects_with_prereqs,
+                    'available_subjects': available_subjects,
+                    'grade_history': grade_history,
+                    'incomplete_subjects': incomplete_subjects,
+                    'has_incomplete': has_incomplete,
+                    'current_level': (year_level, term_no),
                     'selected_subject_ids': selected_subject_ids,
                 }
                 return render(request, 'student/enroll_subjects.html', context)
 
-            # Check prerequisites for selected subjects
-            for subject_id in selected_subject_ids:
-                subject = Subject.objects.get(id=subject_id)
-                prereqs = Prereq.objects.filter(subject=subject).values_list('prereq_subject_id', flat=True)
-                unmet = [p for p in prereqs if p not in completed_subjects]
-                if unmet:
-                    messages.error(request, f'Subject {subject.code} has unmet prerequisites.')
+            # Check prerequisites for selected subjects using new logic
+            for subject in selected_subjects:
+                prereq_check = check_prerequisite_with_grades(student, subject)
+                if not prereq_check['can_take']:
+                    unmet_codes = ', '.join([p.code for p in prereq_check['unmet']])
+                    messages.error(request, f'Subject {subject.code} has unmet prerequisites: {unmet_codes}')
                     context = {
                         'student': student,
                         'active_term': active_term,
-                        'subjects_with_prereqs': subjects_with_prereqs,
+                        'available_subjects': available_subjects,
+                        'grade_history': grade_history,
+                        'incomplete_subjects': incomplete_subjects,
+                        'has_incomplete': has_incomplete,
+                        'current_level': (year_level, term_no),
+                        'selected_subject_ids': selected_subject_ids,
+                    }
+                    return render(request, 'student/enroll_subjects.html', context)
+
+            # Check for double enrollment
+            for subject_id in selected_subject_ids:
+                existing = StudentSubject.objects.filter(
+                    student=student,
+                    subject_id=subject_id,
+                    term=active_term
+                ).exists()
+                if existing:
+                    subject = Subject.objects.get(id=subject_id)
+                    messages.error(request, f'You are already enrolled in {subject.code} this term.')
+                    context = {
+                        'student': student,
+                        'active_term': active_term,
+                        'available_subjects': available_subjects,
+                        'grade_history': grade_history,
+                        'incomplete_subjects': incomplete_subjects,
+                        'has_incomplete': has_incomplete,
+                        'current_level': (year_level, term_no),
                         'selected_subject_ids': selected_subject_ids,
                     }
                     return render(request, 'student/enroll_subjects.html', context)
@@ -126,7 +381,11 @@ def student_enroll_subjects(request):
     context = {
         'student': student,
         'active_term': active_term,
-        'subjects_with_prereqs': subjects_with_prereqs,
+        'available_subjects': available_subjects,
+        'grade_history': grade_history,
+        'incomplete_subjects': incomplete_subjects,
+        'has_incomplete': has_incomplete,
+        'current_level': (year_level, term_no),
     }
     return render(request, 'student/enroll_subjects.html', context)
 
@@ -283,11 +542,48 @@ def student_view_enrollment(request, term_id):
 
 
 @login_required
+def student_grade_history(request):
+    """
+    Display student's grade history across all terms.
+    Shows all completed, failed, incomplete, and repeat required subjects.
+    """
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, 'Student record not found.')
+        return redirect('student_dashboard')
+
+    # Get grade history
+    grade_history = get_student_grade_history(student)
+
+    # Calculate GPA (only from completed subjects)
+    completed_with_grades = [
+        gh for gh in grade_history
+        if gh['status'] == 'completed' and gh['grade_value'] is not None
+    ]
+
+    gpa = None
+    if completed_with_grades:
+        total_grade = sum(gh['grade_value'] for gh in completed_with_grades)
+        gpa = total_grade / len(completed_with_grades)
+
+    context = {
+        'student': student,
+        'grade_history': grade_history,
+        'gpa': gpa,
+        'total_completed': len([gh for gh in grade_history if gh['status'] == 'completed']),
+        'total_failed': len([gh for gh in grade_history if gh['status'] == 'failed']),
+        'total_incomplete': len([gh for gh in grade_history if gh['status'] == 'inc']),
+    }
+    return render(request, 'student/grade_history.html', context)
+
+
+@login_required
 @require_http_methods(["GET"])
 def api_check_prerequisites(request):
     """
     API endpoint to check if prerequisites are met for a subject.
-    Returns JSON with prerequisite information.
+    Returns JSON with prerequisite information including incomplete but passing subjects.
     """
     subject_id = request.GET.get('subject_id')
 
@@ -300,31 +596,46 @@ def api_check_prerequisites(request):
     except (Student.DoesNotExist, Subject.DoesNotExist):
         return JsonResponse({'error': 'Not found'}, status=404)
 
+    # Use new prerequisite checking logic
+    prereq_check = check_prerequisite_with_grades(student, subject)
+
     # Get prerequisites
     prereqs = Prereq.objects.filter(subject=subject).select_related('prereq_subject')
 
-    # Get student's completed subjects
-    completed_subjects = StudentSubject.objects.filter(
-        student=student,
-        status='completed'
-    ).values_list('subject_id', flat=True)
-
     prerequisite_info = []
-    unmet_count = 0
 
     for prereq in prereqs:
-        is_met = prereq.prereq_subject.id in completed_subjects
-        if not is_met:
-            unmet_count += 1
+        prereq_subject = prereq.prereq_subject
+        is_met = False
+        status = 'unmet'
+
+        # Check if completed
+        if StudentSubject.objects.filter(
+            student=student,
+            subject=prereq_subject,
+            status='completed'
+        ).exists():
+            is_met = True
+            status = 'completed'
+        # Check if incomplete but passing
+        elif prereq_check['with_inc']:
+            for inc_prereq in prereq_check['with_inc']:
+                if inc_prereq['subject'].id == prereq_subject.id:
+                    is_met = True
+                    status = 'incomplete_but_passing'
+                    break
+
         prerequisite_info.append({
-            'code': prereq.prereq_subject.code,
-            'title': prereq.prereq_subject.title,
+            'code': prereq_subject.code,
+            'title': prereq_subject.title,
             'is_met': is_met,
+            'status': status,
         })
 
     return JsonResponse({
         'subject_code': subject.code,
         'prerequisites': prerequisite_info,
-        'all_met': unmet_count == 0,
-        'unmet_count': unmet_count,
+        'all_met': prereq_check['can_take'],
+        'unmet_count': len(prereq_check['unmet']),
+        'unmet_subjects': [{'code': s.code, 'title': s.title} for s in prereq_check['unmet']],
     })

@@ -8,7 +8,9 @@
       "Bash(dir /b \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\templates\\registrar\\academics\")",
       "Bash(python test_registrar_features.py:*)",
       "Bash(python test_registrar_simple.py:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\enrollment\\migrations\")",
+      "Bash(dir \"C:\\Users\\Administrator\\Desktop\\isa-akong-alamat\\templates\\student\")"
     ],
     "deny": [],
     "ask": []

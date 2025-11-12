@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Grade History - Richwell College{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Grade History</h1>
+                    <p class="text-lg text-gray-600">{{ student.user.get_full_name }}</p>
+                </div>
+                <a href="{% url 'student_dashboard' %}" class="px-6 py-2 bg-gray-300 text-gray-900 font-medium rounded-lg hover:bg-gray-400">
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- GPA Summary Cards -->
+        {% if gpa %}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 mb-2">Cumulative GPA</p>
+                <p class="text-3xl font-bold text-primary">{{ gpa|floatformat:2 }}</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 mb-2">Completed Subjects</p>
+                <p class="text-3xl font-bold text-green-600">{{ total_completed }}</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 mb-2">Failed Subjects</p>
+                <p class="text-3xl font-bold text-red-600">{{ total_failed }}</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 mb-2">Incomplete Subjects</p>
+                <p class="text-3xl font-bold text-yellow-600">{{ total_incomplete }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grade History Table -->
+        {% if grade_history %}
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-100 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Code</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Title</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Units</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Term</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Grade</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Professor</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for history in grade_history %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ history.subject.code }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            <div class="max-w-xs">
+                                <p class="truncate">{{ history.subject.title }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-900">{{ history.subject.units }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ history.term.name }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if history.grade_value %}
+                                <span class="inline-flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold {% if history.grade_value >= 3 %}bg-green-100 text-green-900{% elif history.grade_value >= 2 %}bg-blue-100 text-blue-900{% else %}bg-red-100 text-red-900{% endif %}">
+                                    {{ history.grade }}
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if history.status == 'completed' %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Completed
+                                </span>
+                            {% elif history.status == 'failed' %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Failed
+                                </span>
+                            {% elif history.status == 'inc' %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Incomplete
+                                </span>
+                            {% elif history.status == 'repeat_required' %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Repeat Required
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {% if history.professor %}
+                                {{ history.professor.first_name }} {{ history.professor.last_name }}
+                            {% else %}
+                                <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Breakdown</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Completed</span>
+                        <span class="text-2xl font-bold text-green-600">{{ total_completed }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Failed</span>
+                        <span class="text-2xl font-bold text-red-600">{{ total_failed }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Incomplete</span>
+                        <span class="text-2xl font-bold text-yellow-600">{{ total_incomplete }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">GPA Information</h3>
+                <div class="space-y-3">
+                    {% if gpa %}
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Current GPA</p>
+                        <p class="text-3xl font-bold text-primary">{{ gpa|floatformat:2 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Based on {{ total_completed }} completed courses</p>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500">No grades posted yet</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Total Units</h3>
+                <div class="space-y-3">
+                    {% if grade_history %}
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Units Completed</p>
+                        <p class="text-3xl font-bold text-primary">
+                            {% widthratio total_completed 1 100 %}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Subjects with passing grades</p>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500">No completed units yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg shadow p-12 text-center">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Grade History</h3>
+            <p class="text-gray-500">You haven't taken any subjects yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .primary {
+        --tw-text-opacity: 1;
+        color: #2563eb;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            font-size: 0.875rem;
+        }
+        th, td {
+            padding: 0.75rem !important;
+        }
+    }
+</style>
+{% endblock %}
