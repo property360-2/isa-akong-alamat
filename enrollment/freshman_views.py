@@ -135,11 +135,11 @@ def freshman_register(request):
                     }
                 )
 
-                # Log the user in
-                login(request, user)
+            # Log the user in OUTSIDE the transaction to avoid session conflicts
+            login(request, user)
 
-                messages.success(request, f'Welcome, {first_name}! Please select your program.')
-                return redirect('freshman_select_program')
+            messages.success(request, f'Welcome, {first_name}! Please select your program.')
+            return redirect('freshman_select_program')
 
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
@@ -254,8 +254,9 @@ def freshman_review_account(request):
                     }
                 )
 
-                messages.success(request, 'Account confirmed! Proceeding to subject enrollment.')
-                return redirect('freshman_enroll_subjects')
+            # Add message AFTER transaction completes
+            messages.success(request, 'Account confirmed! Proceeding to subject enrollment.')
+            return redirect('freshman_enroll_subjects')
 
         except Exception as e:
             messages.error(request, f'Error confirming account: {str(e)}')
