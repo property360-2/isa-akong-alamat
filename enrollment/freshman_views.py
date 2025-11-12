@@ -1,13 +1,14 @@
 """
 Freshman enrollment flow views.
 Handles new student registration and onboarding.
+
+Flow: Landing → Create Credentials → Select Course → Confirm Credentials → Complete
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.db import transaction
-from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from enrollment.models import Student, Term
 from academics.models import Program
@@ -25,7 +26,7 @@ def freshman_landing(request):
         try:
             student = Student.objects.get(user=request.user)
             if student.onboarding_complete:
-                return redirect('enrollments:student_dashboard')
+                return redirect('student_dashboard')
         except Student.DoesNotExist:
             pass
 
@@ -33,25 +34,30 @@ def freshman_landing(request):
 
 
 @csrf_protect
-def freshman_register(request):
+def freshman_create_credentials(request):
     """
-    Student registration form - creates account and temporary Student record.
-    Automatically attaches the active term.
+    Step 1: Create Credentials Form
+    Students enter: First Name, Middle Name, Surname, Suffix (optional)
+    Email, Mobile Number (optional)
+    Password / Confirm Password
+    Username is auto-generated from: Surname + FirstName + MiddleName
     """
     if request.user.is_authenticated:
         try:
             student = Student.objects.get(user=request.user)
-            if student.onboarding_complete:
-                return redirect('enrollments:student_dashboard')
-            return redirect('freshman_select_program')
+            if not student.onboarding_complete:
+                return redirect('freshman:select_course')
+            return redirect('student_dashboard')
         except Student.DoesNotExist:
             pass
 
     if request.method == 'POST':
-        full_name = request.POST.get('full_name', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        middle_name = request.POST.get('middle_name', '').strip()
+        surname = request.POST.get('surname', '').strip()
+        suffix = request.POST.get('suffix', '').strip()
         email = request.POST.get('email', '').strip()
         mobile = request.POST.get('mobile', '').strip()
-        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
         is_freshman = request.POST.get('is_freshman')
@@ -59,12 +65,14 @@ def freshman_register(request):
         # Validation
         errors = []
 
-        if not full_name:
-            errors.append('Full name is required.')
+        if not first_name:
+            errors.append('First name is required.')
+        if not surname:
+            errors.append('Surname is required.')
+        if not middle_name:
+            errors.append('Middle name is required.')
         if not email:
             errors.append('Email is required.')
-        if not username:
-            errors.append('Username is required.')
         if not password:
             errors.append('Password is required.')
         if password != confirm_password:
@@ -72,9 +80,13 @@ def freshman_register(request):
         if not is_freshman:
             errors.append('You must confirm you are a new freshman applicant.')
 
+        # Auto-generate username from surname + first name + middle name
+        # Format: surname + firstname + middlename (all lowercase, no spaces)
+        generated_username = f"{surname.lower()}{first_name.lower()}{middle_name.lower()}"
+
         # Check if username already exists
-        if username and User.objects.filter(username=username).exists():
-            errors.append('Username already exists.')
+        if User.objects.filter(username=generated_username).exists():
+            errors.append(f'Username "{generated_username}" already exists. Please contact registrar.')
 
         # Check if email already exists
         if email and User.objects.filter(email=email).exists():
@@ -84,13 +96,16 @@ def freshman_register(request):
             context = {
                 'errors': errors,
                 'form_data': {
-                    'full_name': full_name,
+                    'first_name': first_name,
+                    'middle_name': middle_name,
+                    'surname': surname,
+                    'suffix': suffix,
                     'email': email,
                     'mobile': mobile,
-                    'username': username,
+                    'generated_username': generated_username,
                 }
             }
-            return render(request, 'freshman/register.html', context)
+            return render(request, 'freshman/create_credentials.html', context)
 
         try:
             with transaction.atomic():
@@ -98,20 +113,15 @@ def freshman_register(request):
                 active_term = Term.objects.filter(is_active=True, archived=False).first()
                 if not active_term:
                     messages.error(request, 'No active term available. Please try again later.')
-                    return render(request, 'freshman/register.html')
+                    return render(request, 'freshman/create_credentials.html')
 
-                # Parse full name (simple split on space)
-                name_parts = full_name.rsplit(' ', 1)
-                first_name = name_parts[0]
-                last_name = name_parts[1] if len(name_parts) > 1 else ''
-
-                # Create user
+                # Create user with auto-generated username
                 user = User.objects.create_user(
-                    username=username,
+                    username=generated_username,
                     email=email,
                     password=password,
                     first_name=first_name,
-                    last_name=last_name,
+                    last_name=surname,  # Store surname in last_name
                     role='student',
                 )
 
@@ -122,47 +132,58 @@ def freshman_register(request):
                     onboarding_complete=False,
                 )
 
+                # Store additional info in documents_json for now
+                student.documents_json = {
+                    'middle_name': middle_name,
+                    'suffix': suffix,
+                    'mobile': mobile,
+                }
+                student.save()
+
                 # Audit trail
                 AuditTrail.objects.create(
                     actor=user,
-                    action='register',
+                    action='create_credentials',
                     entity='User',
                     entity_id=user.id,
                     new_value_json={
-                        'username': username,
+                        'username': generated_username,
                         'email': email,
-                        'full_name': full_name,
+                        'first_name': first_name,
+                        'middle_name': middle_name,
+                        'surname': surname,
+                        'suffix': suffix,
                     }
                 )
 
             # Log the user in OUTSIDE the transaction to avoid session conflicts
             login(request, user)
 
-            messages.success(request, f'Welcome, {first_name}! Please select your program.')
-            return redirect('freshman_select_program')
+            messages.success(request, f'Welcome, {first_name}! Please select your course.')
+            return redirect('freshman:select_course')
 
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
-            return render(request, 'freshman/register.html')
+            return render(request, 'freshman/create_credentials.html')
 
-    return render(request, 'freshman/register.html')
+    return render(request, 'freshman/create_credentials.html')
 
 
-def freshman_select_program(request):
+def freshman_select_course(request):
     """
-    Program (course) selection page.
+    Step 2: Course (Program) Selection Page
     Student selects their desired program and is attached to active curriculum.
     """
     if not request.user.is_authenticated:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     try:
         student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     if student.onboarding_complete:
-        return redirect('enrollments:student_dashboard')
+        return redirect('student_dashboard')
 
     if request.method == 'POST':
         program_id = request.POST.get('program_id')
@@ -170,7 +191,7 @@ def freshman_select_program(request):
         if not program_id:
             messages.error(request, 'Please select a program.')
             programs = Program.objects.all().order_by('level', 'name')
-            return render(request, 'freshman/select_program.html', {'programs': programs})
+            return render(request, 'freshman/select_course.html', {'programs': programs})
 
         try:
             program = Program.objects.get(pk=program_id)
@@ -180,7 +201,7 @@ def freshman_select_program(request):
             if not active_curriculum:
                 messages.error(request, f'No active curriculum available for {program.name}.')
                 programs = Program.objects.all().order_by('level', 'name')
-                return render(request, 'freshman/select_program.html', {'programs': programs})
+                return render(request, 'freshman/select_course.html', {'programs': programs})
 
             # Update student with program and curriculum
             student.program = program
@@ -190,7 +211,7 @@ def freshman_select_program(request):
             # Audit trail
             AuditTrail.objects.create(
                 actor=request.user,
-                action='select_program',
+                action='select_course',
                 entity='Student',
                 entity_id=student.id,
                 new_value_json={
@@ -200,37 +221,38 @@ def freshman_select_program(request):
             )
 
             messages.success(request, f'Program "{program.name}" selected successfully!')
-            return redirect('freshman_review_account')
+            return redirect('freshman:confirm_credentials')
 
         except Program.DoesNotExist:
             messages.error(request, 'Selected program not found.')
             programs = Program.objects.all().order_by('level', 'name')
-            return render(request, 'freshman/select_program.html', {'programs': programs})
+            return render(request, 'freshman/select_course.html', {'programs': programs})
 
     # GET request
     programs = Program.objects.all().order_by('level', 'name')
-    return render(request, 'freshman/select_program.html', {'programs': programs})
+    return render(request, 'freshman/select_course.html', {'programs': programs})
 
 
-def freshman_review_account(request):
+def freshman_confirm_credentials(request):
     """
-    Account review page - student verifies info before completing onboarding.
+    Step 3: Confirm Credentials Page
+    Student verifies all info before completing enrollment.
     Marks onboarding as complete and activates student status.
     """
     if not request.user.is_authenticated:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     try:
         student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     if student.onboarding_complete:
-        return redirect('enrollments:student_dashboard')
+        return redirect('student_dashboard')
 
     if not student.program or not student.curriculum:
-        messages.error(request, 'Please complete program selection first.')
-        return redirect('freshman_select_program')
+        messages.error(request, 'Please complete course selection first.')
+        return redirect('freshman_select_course')
 
     if request.method == 'POST':
         try:
@@ -255,41 +277,46 @@ def freshman_review_account(request):
                 )
 
             # Add message AFTER transaction completes
-            messages.success(request, 'Account confirmed! Proceeding to subject enrollment.')
-            return redirect('freshman_enroll_subjects')
+            messages.success(request, 'Enrollment confirmed! Welcome to Richwell College.')
+            return redirect('freshman:enrollment_complete')
 
         except Exception as e:
-            messages.error(request, f'Error confirming account: {str(e)}')
-            return render(request, 'freshman/review_account.html', {'student': student})
+            messages.error(request, f'Error confirming enrollment: {str(e)}')
+            return render(request, 'freshman/confirm_credentials.html', {'student': student})
 
-    # GET request - show review page
+    # GET request - show confirmation page
     active_term = Term.objects.filter(is_active=True, archived=False, level=student.program.level).first()
+
+    # Get middle name and suffix from documents_json
+    middle_name = student.documents_json.get('middle_name', '')
+    suffix = student.documents_json.get('suffix', '')
 
     context = {
         'student': student,
         'active_term': active_term,
+        'middle_name': middle_name,
+        'suffix': suffix,
     }
-    return render(request, 'freshman/review_account.html', context)
+    return render(request, 'freshman/confirm_credentials.html', context)
 
 
-def freshman_enroll_subjects(request):
+def freshman_enrollment_complete(request):
     """
-    Subject enrollment page - Step 4 of freshman enrollment.
-    Placeholder for future subject selection functionality.
+    Enrollment completion page - confirmation of successful enrollment.
     """
     if not request.user.is_authenticated:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     try:
         student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
-        return redirect('freshman_register')
+        return redirect('freshman:create_credentials')
 
     if not student.onboarding_complete:
-        messages.error(request, 'Please complete account review first.')
-        return redirect('freshman_review_account')
+        messages.error(request, 'Please complete enrollment first.')
+        return redirect('freshman_confirm_credentials')
 
     context = {
         'student': student,
     }
-    return render(request, 'freshman/enroll_subjects.html', context)
+    return render(request, 'freshman/enrollment_complete.html', context)
