@@ -14,6 +14,8 @@ from enrollment.models import Student, Term
 from academics.models import Program
 from users.models import User
 from audit.models import AuditTrail
+import secrets
+import string
 
 
 def freshman_landing(request):
@@ -58,8 +60,6 @@ def freshman_create_credentials(request):
         suffix = request.POST.get('suffix', '').strip()
         email = request.POST.get('email', '').strip()
         mobile = request.POST.get('mobile', '').strip()
-        password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
         is_freshman = request.POST.get('is_freshman')
 
         # Validation
@@ -73,12 +73,12 @@ def freshman_create_credentials(request):
             errors.append('Middle name is required.')
         if not email:
             errors.append('Email is required.')
-        if not password:
-            errors.append('Password is required.')
-        if password != confirm_password:
-            errors.append('Passwords do not match.')
         if not is_freshman:
             errors.append('You must confirm you are a new freshman applicant.')
+
+        # Validate email format
+        if email and '@' not in email:
+            errors.append('Please enter a valid email address.')
 
         # Auto-generate username from surname + first name + middle name
         # Format: surname + firstname + middlename (all lowercase, no spaces)
@@ -91,6 +91,23 @@ def freshman_create_credentials(request):
         # Check if email already exists
         if email and User.objects.filter(email=email).exists():
             errors.append('Email already exists.')
+
+        # Generate a secure random password (12 characters: mix of letters, digits, special chars)
+        # Format: at least 2 uppercase, 2 lowercase, 2 digits, 1 special char
+        password_chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "!@#$%&"
+        # Ensure diverse character mix
+        generated_password = (
+            secrets.choice(string.ascii_uppercase) +
+            secrets.choice(string.ascii_uppercase) +
+            secrets.choice(string.ascii_lowercase) +
+            secrets.choice(string.ascii_lowercase) +
+            secrets.choice(string.digits) +
+            secrets.choice(string.digits) +
+            secrets.choice("!@#$%&") +
+            ''.join(secrets.choice(password_chars) for _ in range(5))
+        )
+        # Shuffle to make it less predictable
+        generated_password = ''.join(secrets.SystemRandom().sample(generated_password, len(generated_password)))
 
         if errors:
             context = {
@@ -115,11 +132,11 @@ def freshman_create_credentials(request):
                     messages.error(request, 'No active term available. Please try again later.')
                     return render(request, 'freshman/create_credentials.html')
 
-                # Create user with auto-generated username
+                # Create user with auto-generated username and password
                 user = User.objects.create_user(
                     username=generated_username,
                     email=email,
-                    password=password,
+                    password=generated_password,
                     first_name=first_name,
                     last_name=surname,  # Store surname in last_name
                     role='student',
@@ -158,6 +175,11 @@ def freshman_create_credentials(request):
 
             # Log the user in OUTSIDE the transaction to avoid session conflicts
             login(request, user)
+
+            # Store generated credentials in session for display on confirm page
+            request.session['generated_username'] = generated_username
+            request.session['generated_password'] = generated_password
+            request.session['generated_email'] = email
 
             messages.success(request, f'Welcome, {first_name}! Please select your course.')
             return redirect('freshman:select_course')
@@ -291,11 +313,15 @@ def freshman_confirm_credentials(request):
     middle_name = student.documents_json.get('middle_name', '')
     suffix = student.documents_json.get('suffix', '')
 
+    # Get generated password from session
+    generated_password = request.session.get('generated_password', '')
+
     context = {
         'student': student,
         'active_term': active_term,
         'middle_name': middle_name,
         'suffix': suffix,
+        'generated_password': generated_password,
     }
     return render(request, 'freshman/confirm_credentials.html', context)
 

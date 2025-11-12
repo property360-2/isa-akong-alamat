@@ -44,8 +44,6 @@ def test_freshman_flow():
         'suffix': 'Jr.',
         'email': 'juan.carlos.delacruz@example.com',
         'mobile': '+63 9123456789',
-        'password': 'SecurePassword123!',
-        'confirm_password': 'SecurePassword123!',
         'is_freshman': 'on'
     }
 
@@ -87,9 +85,7 @@ def test_freshman_flow():
         print(f"✗ Program selection failed: {e}")
         return False
 
-    # Log in the user and select course
-    client.login(username=expected_username, password='SecurePassword123!')
-
+    # User is already logged in from credentials creation
     course_data = {
         'program_id': program.id
     }
