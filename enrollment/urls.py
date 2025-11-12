@@ -11,6 +11,8 @@ urlpatterns = [
     path('terms/<int:pk>/activate/', views.term_activate, name='term_activate'),
     path('terms/<int:pk>/close/', views.term_close, name='term_close'),
     path('terms/<int:pk>/delete/', views.term_delete, name='term_delete'),
+    path('terms/<int:pk>/archive/', views.term_archive, name='term_archive'),
+    path('terms/<int:pk>/unarchive/', views.term_unarchive, name='term_unarchive'),
 
     # Sections
     path('sections/', views.sections_list, name='sections_list'),

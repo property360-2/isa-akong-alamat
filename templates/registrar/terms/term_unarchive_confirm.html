@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Unarchive Term - Richwell Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Unarchive Term</h2>
+        </div>
+
+        <div class="px-6 py-6">
+            <div class="rounded-lg bg-blue-50 border border-blue-200 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A11.011 11.011 0 003.03 15.192a1 1 0 001.945-.494c2.526-4.71 8.236-7.244 13.425-5.622.572.17 1.156.363 1.73.575a1 1 0 00.57-1.93c-.67-.22-1.334-.437-1.992-.612zM9 12.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">
+                            Restoring archived term
+                        </h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>
+                                This will restore the archived term to active use. It will appear in the normal term list again.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Term Name</label>
+                    <div class="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300">
+                        <p class="text-sm text-gray-900 font-medium">{{ term.name }}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Level</label>
+                        <div class="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300">
+                            <p class="text-sm text-gray-900">{{ term.get_level_display }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <div class="mt-1 p-3 bg-gray-50 rounded-md border border-gray-300">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Archived</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <a href="{% url 'enrollment:terms_list' %}"
+                   class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    Cancel
+                </a>
+                <form method="POST" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Unarchive Term
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -33,6 +33,7 @@ class Term(models.Model):
     add_drop_deadline = models.DateField(null=True, blank=True)
     grade_encoding_deadline = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=False)
+    archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

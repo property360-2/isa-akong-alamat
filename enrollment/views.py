@@ -12,15 +12,15 @@ import json
 @role_required('registrar')
 def terms_list(request):
     """
-    List all terms with active terms highlighted per level.
+    List all non-archived terms with active terms highlighted per level.
     """
-    terms = Term.objects.all().order_by('level', '-start_date')
+    terms = Term.objects.filter(archived=False).order_by('level', '-start_date')
 
     # Get active terms for each level
     active_terms = {
-        'SHS': Term.objects.filter(is_active=True, level='SHS').first(),
-        'Bachelor': Term.objects.filter(is_active=True, level='Bachelor').first(),
-        'Masteral': Term.objects.filter(is_active=True, level='Masteral').first(),
+        'SHS': Term.objects.filter(is_active=True, archived=False, level='SHS').first(),
+        'Bachelor': Term.objects.filter(is_active=True, archived=False, level='Bachelor').first(),
+        'Masteral': Term.objects.filter(is_active=True, archived=False, level='Masteral').first(),
     }
 
     context = {
@@ -155,10 +155,10 @@ def term_activate(request, pk):
     if request.method == 'POST':
         with transaction.atomic():
             # Get currently active term for this level
-            old_active_term = Term.objects.filter(is_active=True, level=term.level).first()
+            old_active_term = Term.objects.filter(is_active=True, archived=False, level=term.level).first()
 
-            # Deactivate all terms for this level only
-            Term.objects.filter(level=term.level).update(is_active=False)
+            # Deactivate all non-archived terms for this level only
+            Term.objects.filter(level=term.level, archived=False).update(is_active=False)
 
             # Activate selected term
             term.is_active = True
@@ -267,6 +267,76 @@ def term_delete(request, pk):
         'term': term,
     }
     return render(request, 'registrar/terms/term_delete_confirm.html', context)
+
+
+@role_required('registrar')
+def term_archive(request, pk):
+    """
+    Archive a term. Archived terms are hidden from normal views but kept for historical records.
+    """
+    term = get_object_or_404(Term, pk=pk)
+
+    if request.method == 'POST':
+        old_status = term.archived
+
+        # If term is active, deactivate it first
+        if term.is_active:
+            term.is_active = False
+
+        # Archive the term
+        term.archived = True
+        term.save()
+
+        # Audit trail
+        AuditTrail.objects.create(
+            actor=request.user,
+            action='archive',
+            entity='Term',
+            entity_id=term.id,
+            old_value_json={'archived': old_status, 'is_active': term.is_active if term.is_active else False},
+            new_value_json={'archived': True, 'is_active': False},
+        )
+
+        messages.success(request, f'Term "{term.name}" has been archived.')
+        return redirect('enrollment:terms_list')
+
+    context = {
+        'term': term,
+    }
+    return render(request, 'registrar/terms/term_archive_confirm.html', context)
+
+
+@role_required('registrar')
+def term_unarchive(request, pk):
+    """
+    Unarchive a term. Restore an archived term to active use.
+    """
+    term = get_object_or_404(Term, pk=pk)
+
+    if request.method == 'POST':
+        old_status = term.archived
+
+        # Unarchive the term
+        term.archived = False
+        term.save()
+
+        # Audit trail
+        AuditTrail.objects.create(
+            actor=request.user,
+            action='unarchive',
+            entity='Term',
+            entity_id=term.id,
+            old_value_json={'archived': old_status},
+            new_value_json={'archived': False},
+        )
+
+        messages.success(request, f'Term "{term.name}" has been unarchived.')
+        return redirect('enrollment:terms_list')
+
+    context = {
+        'term': term,
+    }
+    return render(request, 'registrar/terms/term_unarchive_confirm.html', context)
 
 
 # ==================== SECTION MANAGEMENT ====================

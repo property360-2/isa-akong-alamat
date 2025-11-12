@@ -101,7 +101,7 @@ def registrar_dashboard(request):
     from academics.models import Program, Curriculum
 
     context = {
-        'active_terms': Term.objects.filter(is_active=True),
+        'active_terms': Term.objects.filter(is_active=True, archived=False),
         'recent_sections': Section.objects.all().order_by('-created_at')[:10],
         'total_programs': Program.objects.count(),
         'total_curricula': Curriculum.objects.filter(active=True).count(),
