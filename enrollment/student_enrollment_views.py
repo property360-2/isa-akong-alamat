@@ -192,18 +192,21 @@ def student_confirm_enrollment(request):
                     if not section:
                         section = subject.sections.filter(term=active_term).first()
 
+                    # Get the first professor assigned to this section (if section exists)
+                    professor = None
                     if section:
-                        # Get the first professor assigned to this section
                         professor = section.professors.first()
-                        if professor:
-                            StudentSubject.objects.create(
-                                student=student,
-                                subject=subject,
-                                term=active_term,
-                                section=section,
-                                professor=professor,
-                                status='enrolled'
-                            )
+
+                    # Create StudentSubject record even if section/professor is not assigned
+                    # They can be assigned later by the registrar
+                    StudentSubject.objects.create(
+                        student=student,
+                        subject=subject,
+                        term=active_term,
+                        section=section,
+                        professor=professor,
+                        status='enrolled'
+                    )
 
                 # Audit trail
                 AuditTrail.objects.create(

@@ -89,9 +89,21 @@
                             <div class="text-sm font-medium text-gray-900">{{ ss.subject.code }}</div>
                             <div class="text-sm text-gray-500">{{ ss.subject.title }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ss.section.section_code }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if ss.section %}
+                                {{ ss.section.section_code }}
+                            {% else %}
+                                <span class="text-gray-400 italic">To be assigned</span>
+                            {% endif %}
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ss.term.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ss.professor.get_full_name|default:ss.professor.username }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if ss.professor %}
+                                {{ ss.professor.get_full_name|default:ss.professor.username }}
+                            {% else %}
+                                <span class="text-gray-400 italic">To be assigned</span>
+                            {% endif %}
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ss.subject.units }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium

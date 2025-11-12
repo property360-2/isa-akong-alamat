@@ -79,11 +79,21 @@
                             </td>
                             <td class="px-6 py-4 text-center text-sm text-gray-900">{{ subject_enrollment.subject.units }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">
+                                {% if subject_enrollment.section %}
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {{ subject_enrollment.section.section_code }}
                                 </span>
+                                {% else %}
+                                <span class="text-gray-500 italic">To be assigned</span>
+                                {% endif %}
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ subject_enrollment.professor.get_full_name }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                {% if subject_enrollment.professor %}
+                                    {{ subject_enrollment.professor.get_full_name }}
+                                {% else %}
+                                    <span class="text-gray-500 italic">To be assigned</span>
+                                {% endif %}
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     {{ subject_enrollment.get_status_display }}
