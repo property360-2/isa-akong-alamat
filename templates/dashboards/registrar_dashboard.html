@@ -139,9 +139,9 @@
                     {% for section in recent_sections %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ section.section_code }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.subject.code }} - {{ section.subject.title }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.get_subjects_display }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.term.name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.professor.get_full_name|default:section.professor.username }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.get_professors_display }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ section.capacity }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
