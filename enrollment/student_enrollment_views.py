@@ -44,7 +44,7 @@ def student_enroll_subjects(request):
     existing_enrollment = Enrollment.objects.filter(student=student, term=active_term).first()
     if existing_enrollment:
         messages.info(request, 'You have already completed enrollment for this term.')
-        return redirect('student_view_enrollment', term_id=active_term.id)
+        return redirect('enrollment:view_enrollment', term_id=active_term.id)
 
     # Get curriculum subjects for 1st year, 1st semester
     curriculum_subjects = CurriculumSubject.objects.filter(
@@ -118,7 +118,7 @@ def student_enroll_subjects(request):
             request.session['enrollment_subjects'] = selected_subject_ids
             request.session['enrollment_total_units'] = float(total_units)
 
-            return redirect('student_confirm_enrollment')
+            return redirect('enrollment:confirm_enrollment')
 
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
@@ -149,7 +149,7 @@ def student_confirm_enrollment(request):
 
     if not selected_subject_ids:
         messages.error(request, 'No subjects selected.')
-        return redirect('student_enroll_subjects')
+        return redirect('enrollment:enroll_subjects')
 
     # Get active term
     active_term = Term.objects.filter(is_active=True, archived=False, level=student.program.level).first()
@@ -223,7 +223,7 @@ def student_confirm_enrollment(request):
             del request.session['enrollment_total_units']
 
             messages.success(request, 'Enrollment confirmed successfully!')
-            return redirect('student_view_enrollment', term_id=active_term.id)
+            return redirect('enrollment:view_enrollment', term_id=active_term.id)
 
         except Exception as e:
             messages.error(request, f'Error confirming enrollment: {str(e)}')
