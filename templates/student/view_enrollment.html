@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Enrollment - Richwell College{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Your Enrollment</h1>
+            <p class="text-gray-600">{{ term.name }} - 1st Year, 1st Semester</p>
+        </div>
+
+        <!-- Enrollment Status -->
+        <div class="mb-8 bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Enrollment Status</h2>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    {{ enrollment.get_status_display }}
+                </span>
+            </div>
+            <p class="text-gray-600">
+                <strong>Confirmed on:</strong> {{ enrollment.confirmed_at|date:"F d, Y H:i" }}
+            </p>
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Note:</strong> Your enrollment is locked and cannot be edited. Contact the registrar's office if you need to make changes.
+                </p>
+            </div>
+        </div>
+
+        <!-- Enrollment Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 font-medium mb-1">TOTAL SUBJECTS</p>
+                <p class="text-3xl font-bold text-primary">{{ subjects|length }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 font-medium mb-1">TOTAL UNITS</p>
+                <p class="text-3xl font-bold text-primary">{{ enrollment.total_units }}</p>
+                <p class="text-xs text-gray-500 mt-1">Max: 30 units</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <p class="text-sm text-gray-600 font-medium mb-1">TERM</p>
+                <p class="text-lg font-semibold text-gray-900">{{ term.name }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ term.start_date|date:"M d" }} - {{ term.end_date|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Enrolled Subjects -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">Enrolled Subjects</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Subject Code</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Title</th>
+                            <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900 w-24">Units</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Section</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Professor</th>
+                            <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900 w-24">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for subject_enrollment in subjects %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ subject_enrollment.subject.code }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                <div>
+                                    <p class="font-medium">{{ subject_enrollment.subject.title }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ subject_enrollment.subject.description|truncatewords:10 }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm text-gray-900">{{ subject_enrollment.subject.units }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ subject_enrollment.section.section_code }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ subject_enrollment.professor.get_full_name }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {{ subject_enrollment.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                No subjects enrolled for this term.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Links -->
+        <div class="mt-8 flex gap-4">
+            <a href="{% url 'student_dashboard' %}" class="flex-1 px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 text-center">
+                Back to Dashboard
+            </a>
+            <a href="{% url 'student_dashboard' %}" class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 text-center">
+                View Schedule
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

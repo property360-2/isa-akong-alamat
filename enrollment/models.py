@@ -96,3 +96,29 @@ class StudentSubject(models.Model):
     professor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'professor'})
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='enrolled')
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Enrollment(models.Model):
+    """
+    Tracks term-level enrollments for students.
+    Once created, enrollment is locked - no edits or re-enrollment allowed for that term.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
+    term = models.ForeignKey(Term, on_delete=models.CASCADE)
+    total_units = models.DecimalField(max_digits=5, decimal_places=1)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('draft', 'Draft'),  # Not yet confirmed
+            ('confirmed', 'Confirmed'),  # Locked, cannot edit
+            ('completed', 'Completed'),  # Term finished
+        ],
+        default='confirmed'
+    )
+    confirmed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'term')  # One enrollment per student per term
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.term.name}"

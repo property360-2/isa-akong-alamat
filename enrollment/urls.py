@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import student_enrollment_views
 
 app_name = 'enrollment'
 
@@ -28,4 +29,11 @@ urlpatterns = [
 
     # Admissions (placeholder)
     path('admissions/', views.admissions_list, name='admissions_list'),
+
+    # Student Subject Enrollment
+    path('student/subjects/', student_enrollment_views.student_enroll_subjects, name='enroll_subjects'),
+    path('student/confirm/', student_enrollment_views.student_confirm_enrollment, name='confirm_enrollment'),
+    path('student/term/<int:term_id>/', student_enrollment_views.student_view_enrollment, name='view_enrollment'),
+    path('api/prerequisites/', student_enrollment_views.api_check_prerequisites, name='api_prerequisites'),
 ]
+

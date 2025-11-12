@@ -11,6 +11,21 @@
     </div>
 
     {% if student %}
+    <!-- Subject Enrollment CTA -->
+    {% if not has_active_enrollment %}
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-semibold mb-1">Ready to Enroll in Subjects?</h2>
+                <p class="text-blue-100">Select your subjects for the current term. You can adjust your selection until confirmation.</p>
+            </div>
+            <a href="{% url 'enrollment:enroll_subjects' %}" class="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors">
+                Start Enrollment →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Student Information -->
     <div class="bg-white shadow rounded-lg border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
