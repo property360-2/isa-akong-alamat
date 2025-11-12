@@ -6,11 +6,14 @@ app_name = 'enrollment'
 urlpatterns = [
     # Terms
     path('terms/', views.terms_list, name='terms_list'),
+    path('terms/archived/', views.archived_terms_list, name='archived_terms_list'),
     path('terms/create/', views.term_create, name='term_create'),
     path('terms/<int:pk>/update/', views.term_update, name='term_update'),
     path('terms/<int:pk>/activate/', views.term_activate, name='term_activate'),
     path('terms/<int:pk>/close/', views.term_close, name='term_close'),
     path('terms/<int:pk>/delete/', views.term_delete, name='term_delete'),
+    path('terms/<int:pk>/archive/', views.term_archive, name='term_archive'),
+    path('terms/<int:pk>/unarchive/', views.term_unarchive, name='term_unarchive'),
 
     # Sections
     path('sections/', views.sections_list, name='sections_list'),
