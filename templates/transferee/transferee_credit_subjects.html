@@ -342,9 +342,11 @@
     // Subject Data
     let subjects = [];
     try {
-        subjects = {{ available_subjects|default:"[]"|safe }};
+        // available_subjects is already a JSON string from the view, so parse it
+        subjects = JSON.parse({{ available_subjects|default:"\"[]\""|safe }});
     } catch(e) {
         console.error('Error parsing subjects:', e);
+        console.error('Raw value:', {{ available_subjects|default:"\"[]\""|safe }});
     }
 
     console.log('Subjects loaded:', subjects.length, 'subjects');
@@ -357,7 +359,12 @@
     let currentCategory = 'all';
 
     // Load already credited subjects
-    const creditedSubjectIds = {{ credited_subject_ids|default:"[]"|safe }};
+    let creditedSubjectIds = [];
+    try {
+        creditedSubjectIds = JSON.parse({{ credited_subject_ids|default:"\"[]\""|safe }});
+    } catch(e) {
+        console.error('Error parsing credited subjects:', e);
+    }
     console.log('Already credited:', creditedSubjectIds.length, 'subjects');
     if (creditedSubjectIds && creditedSubjectIds.length > 0) {
         creditedSubjectIds.forEach(id => selectedSubjects.add(id));
