@@ -220,6 +220,13 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Django Messages (converted to toasts) -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="django-message" data-type="{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}" style="display: none;">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
 <!-- Registrar Navigation Bar -->
 {% block registrar_nav %}
 <div class="registrar-nav">
