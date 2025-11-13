@@ -173,7 +173,7 @@ def transferee_create(request):
             )
 
             messages.success(request, f'Transferee enrollment created for {first_name} {last_name}. Status: Pending Credential Input')
-            return redirect('transferee_detail', pk=transferee.id)
+            return redirect('enrollment:transferee_detail', pk=transferee.id)
 
         except Program.DoesNotExist:
             messages.error(request, 'Selected program not found.')
@@ -205,7 +205,7 @@ def transferee_detail(request, pk):
         if action == 'verify_tor':
             if transferee.status != 'pending_tor_verification':
                 messages.error(request, 'Can only verify TOR for enrollments pending verification.')
-                return redirect('transferee_detail', pk=pk)
+                return redirect('enrollment:transferee_detail', pk=pk)
 
             with transaction.atomic():
                 transferee.status = 'tor_verified'
@@ -224,17 +224,17 @@ def transferee_detail(request, pk):
                 )
 
             messages.success(request, 'TOR verified successfully! Ready to create account.')
-            return redirect('transferee_detail', pk=pk)
+            return redirect('enrollment:transferee_detail', pk=pk)
 
         # Create account
         elif action == 'create_account':
             if transferee.status != 'tor_verified':
                 messages.error(request, 'TOR must be verified before creating account.')
-                return redirect('transferee_detail', pk=pk)
+                return redirect('enrollment:transferee_detail', pk=pk)
 
             if transferee.created_user:
                 messages.warning(request, 'Account already created for this transferee.')
-                return redirect('transferee_detail', pk=pk)
+                return redirect('enrollment:transferee_detail', pk=pk)
 
             try:
                 with transaction.atomic():
@@ -313,18 +313,18 @@ def transferee_detail(request, pk):
                 request.session['transferee_student_id'] = student.student_id
 
                 messages.success(request, 'Account created successfully! Credentials have been generated.')
-                return redirect('transferee_account_details', pk=pk)
+                return redirect('enrollment:transferee_account_details', pk=pk)
 
             except Exception as e:
                 messages.error(request, f'Error creating account: {str(e)}')
-                return redirect('transferee_detail', pk=pk)
+                return redirect('enrollment:transferee_detail', pk=pk)
 
         # Reject transferee
         elif action == 'reject':
             rejection_reason = request.POST.get('rejection_reason', '').strip()
             if not rejection_reason:
                 messages.error(request, 'Rejection reason is required.')
-                return redirect('transferee_detail', pk=pk)
+                return redirect('enrollment:transferee_detail', pk=pk)
 
             transferee.status = 'rejected'
             transferee.rejection_reason = rejection_reason
@@ -340,7 +340,7 @@ def transferee_detail(request, pk):
             )
 
             messages.success(request, 'Transferee enrollment rejected.')
-            return redirect('transferee_list')
+            return redirect('enrollment:transferee_list')
 
     context = {
         'transferee': transferee,
@@ -359,7 +359,7 @@ def transferee_account_details(request, pk):
 
     if transferee.status != 'account_created':
         messages.error(request, 'Account not yet created for this transferee.')
-        return redirect('transferee_detail', pk=pk)
+        return redirect('enrollment:transferee_detail', pk=pk)
 
     username = request.session.pop('transferee_username', None)
     password = request.session.pop('transferee_password', None)
