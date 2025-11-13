@@ -436,7 +436,7 @@ def transferee_credit_subjects(request, pk):
         ).order_by('code')
     )
 
-    # Add display labels for subject types
+    # Add display labels for subject types and convert Decimal to float
     for subject in subjects_list:
         type_display_map = {
             'major': 'Major',
@@ -444,6 +444,8 @@ def transferee_credit_subjects(request, pk):
             'elective': 'Elective',
         }
         subject['type_display'] = type_display_map.get(subject['type'], subject['type'])
+        # Convert Decimal to float for JSON serialization
+        subject['units'] = float(subject['units']) if subject['units'] else 0
 
     # Serialize to JSON for JavaScript
     available_subjects_json = json.dumps(subjects_list)
