@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 urlpatterns = [
-    path('', lambda request: redirect('dashboard' if request.user.is_authenticated else 'freshman:landing')),
+    path('', lambda request: redirect('dashboard' if request.user.is_authenticated else 'login')),
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
     path('freshman/', include('enrollment.freshman_urls')),
