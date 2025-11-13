@@ -11,7 +11,7 @@
     </div>
 
     <!-- Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
             <div class="p-5">
                 <div class="flex items-center">
@@ -47,6 +47,24 @@
                 </div>
             </div>
         </div>
+
+        <a href="{% url 'enrollment:transferee_list' %}" class="bg-white overflow-hidden shadow rounded-lg border border-orange-200 hover:border-orange-400 hover:shadow-md transition-all cursor-pointer">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Transferee Enrollments</dt>
+                            <dd class="text-2xl font-semibold text-gray-900">{{ pending_transferees }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 
     <!-- Recent Students -->
@@ -96,7 +114,7 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <a href="{% url 'admin:enrollment_student_add' %}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
             <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
@@ -114,6 +132,16 @@
             <div class="ml-4">
                 <div class="text-sm font-medium text-gray-900">View All Students</div>
                 <div class="text-xs text-gray-600">Manage student records</div>
+            </div>
+        </a>
+
+        <a href="{% url 'enrollment:transferee_create' %}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200">
+            <svg class="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">New Transferee</div>
+                <div class="text-xs text-gray-600">Register transfer student</div>
             </div>
         </a>
     </div>

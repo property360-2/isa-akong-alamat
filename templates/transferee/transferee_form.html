@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Transferee Enrollment - Richwell School Portal{% endblock %}
+{% block title %}New Transferee - Richwell School Portal{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Create Transferee Enrollment</h1>
-        <p class="text-gray-600 text-sm mt-1">Manually input transferee credentials for manual enrollment</p>
+        <h1 class="text-3xl font-bold text-gray-900">Register New Transferee Student</h1>
+        <p class="text-gray-600 text-sm mt-1">Input transferee information and manage course credits</p>
     </div>
 
     <!-- Error Messages -->
@@ -103,9 +103,9 @@
             </div>
         </div>
 
-        <!-- Transfer Information Section -->
+        <!-- Previous Studies Section -->
         <div class="border-b border-gray-200 pb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">Transfer Information</h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Previous Studies</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Transfer Type -->
                 <div>
@@ -115,7 +115,7 @@
                     <select id="transfer_type" name="transfer_type" required
                             class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                         <option value="">-- Select Transfer Type --</option>
-                        <option value="same_school" {% if form_data.transfer_type == 'same_school' %}selected{% endif %}>Transfer from Another Course (Same School)</option>
+                        <option value="same_school" {% if form_data.transfer_type == 'same_school' %}selected{% endif %}>Course Change (Same School)</option>
                         <option value="external_school" {% if form_data.transfer_type == 'external_school' %}selected{% endif %}>Transfer from Another School</option>
                     </select>
                 </div>
@@ -123,7 +123,7 @@
                 <!-- Source School -->
                 <div>
                     <label for="source_school" class="block text-sm font-medium text-gray-700 mb-2">
-                        Source School Name *
+                        Previous School/Institution *
                     </label>
                     <input type="text" id="source_school" name="source_school"
                            value="{{ form_data.source_school }}"
@@ -135,7 +135,7 @@
                 <!-- Source Program -->
                 <div class="md:col-span-2">
                     <label for="source_program" class="block text-sm font-medium text-gray-700 mb-2">
-                        Source Program Name *
+                        Previous Course/Program *
                     </label>
                     <input type="text" id="source_program" name="source_program"
                            value="{{ form_data.source_program }}"
@@ -146,9 +146,9 @@
             </div>
         </div>
 
-        <!-- Program Assignment Section -->
+        <!-- Desired Program Section -->
         <div class="border-b border-gray-200 pb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">Target Program Assignment</h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Desired Program</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Program -->
                 <div>
@@ -205,7 +205,7 @@
             </a>
             <button type="submit"
                     class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
-                Create Transferee Enrollment
+                Create and Continue
             </button>
         </div>
     </form>

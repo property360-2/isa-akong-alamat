@@ -188,16 +188,22 @@ def student_dashboard(request):
 @role_required('admission')
 def admission_dashboard(request):
     """
-    Admission dashboard for managing new applicants.
+    Admission dashboard for managing new applicants and transferee enrollment.
     """
-    from enrollment.models import Student
+    from enrollment.models import Student, TransfereeEnrollment
 
     recent_students = Student.objects.all().order_by('-created_at')[:20]
+
+    # Transferee statistics
+    pending_transferees = TransfereeEnrollment.objects.exclude(
+        status__in=['rejected', 'account_created']
+    ).count()
 
     context = {
         'recent_students': recent_students,
         'total_students': Student.objects.count(),
         'active_students': Student.objects.filter(status='active').count(),
+        'pending_transferees': pending_transferees,
     }
     return render(request, 'dashboards/admission_dashboard.html', context)
 
