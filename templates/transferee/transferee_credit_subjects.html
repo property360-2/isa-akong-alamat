@@ -1,148 +1,474 @@
-{% extends 'base.html' %}
+{% extends 'registrar_base.html' %}
 
 {% block title %}Credit Completed Subjects - Richwell School Portal{% endblock %}
 
-{% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Credit Completed Subjects</h1>
-        <p class="text-gray-600 text-sm mt-1">Select subjects that {{ transferee.first_name }} {{ transferee.last_name }} has already completed from their previous school/course</p>
-    </div>
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .search-container {
+        position: relative;
+        margin-bottom: 24px;
+    }
 
-    <!-- Progress Indicator -->
-    <div class="mb-8">
-        <div class="flex items-center">
-            <div class="flex items-center text-sm">
-                <span class="flex items-center justify-center h-8 w-8 rounded-full bg-green-600 text-white font-semibold">✓</span>
-                <span class="ml-2 text-gray-900 font-medium">Account Created</span>
-            </div>
-            <div class="flex-1 mx-4 h-1 bg-gray-300"></div>
-            <div class="flex items-center text-sm">
-                <span class="flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-semibold">2</span>
-                <span class="ml-2 text-gray-900 font-medium">Credit Subjects</span>
-            </div>
-            <div class="flex-1 mx-4 h-1 bg-gray-300"></div>
-            <div class="flex items-center text-sm">
-                <span class="flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-gray-600 font-semibold">3</span>
-                <span class="ml-2 text-gray-600">Finish Enrollment</span>
-            </div>
-        </div>
-    </div>
+    .search-input {
+        width: 100%;
+        padding: 12px 16px 12px 40px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
 
-    <!-- Back Button -->
-    <a href="{% url 'enrollment:transferee_detail' transferee.pk %}"
-       class="inline-flex items-center text-primary hover:text-blue-700 mb-6 font-medium text-sm">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Details
-    </a>
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
 
-    <!-- Available Subjects Form -->
-    <form method="post" class="bg-white rounded-lg shadow p-8">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add_subjects">
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        color: #9ca3af;
+        pointer-events: none;
+    }
 
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Select Completed Subjects</h2>
+    .search-results-count {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 8px;
+    }
 
-        {% if available_subjects %}
-        <div class="mb-8 border rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left">
-                            <input type="checkbox" id="select-all"
-                                   onchange="document.querySelectorAll('input[name=subject_ids]').forEach(c => c.checked = this.checked)"
-                                   class="rounded border-gray-300">
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for subject in available_subjects %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="checkbox" name="subject_ids" value="{{ subject.id }}"
-                                   class="rounded border-gray-300">
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {{ subject.code }}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-700">
-                            {{ subject.title }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ subject.units }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {% if subject.type == 'major' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ subject.get_type_display }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    .category-tabs {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
 
-        <div class="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-sm text-blue-900">
-                <strong>Note:</strong> Select all subjects that {{ transferee.first_name }} has already completed at their previous school. These will be marked as "completed" in their transcript.
-            </p>
-        </div>
+    .category-tab {
+        padding: 8px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.2s;
+    }
 
-        <!-- Form Actions -->
-        <div class="flex justify-end space-x-4">
-            <button type="submit" name="action" value="skip_subjects"
-                    class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                Skip (No Subjects)
-            </button>
-            <button type="submit"
-                    class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
-                Credit Selected Subjects
-            </button>
-        </div>
-    </form>
+    .category-tab:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
 
-    <!-- Student Info Summary -->
-    <div class="mt-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Student Information</h3>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-                <p class="text-xs font-semibold text-gray-600 uppercase">Student ID</p>
-                <p class="text-lg font-mono text-primary">{{ student.student_id }}</p>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-gray-600 uppercase">Username</p>
-                <p class="text-sm font-mono text-gray-900">{{ student.user.username }}</p>
-            </div>
-            <div>
-                <p class="text-xs font-semibold text-gray-600 uppercase">Program</p>
-                <p class="text-sm text-gray-900">{{ transferee.program.name }}</p>
-            </div>
-        </div>
+    .category-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+    }
+
+    .category-count {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-left: 4px;
+    }
+
+    .subjects-grid {
+        display: grid;
+        gap: 16px;
+    }
+
+    .subject-card {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .subject-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    }
+
+    .subject-card input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .subject-card.selected {
+        background: #f0f4ff;
+        border-color: #667eea;
+    }
+
+    .subject-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .subject-code {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .subject-title {
+        color: #6b7280;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .subject-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: #9ca3af;
+    }
+
+    .subject-type {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #f3f4f6;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .subject-type.major {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .subject-type.minor {
+        background: #fce7f3;
+        color: #831843;
+    }
+
+    .selected-count {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 500;
+    }
+
+    .selected-count-value {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .empty-state-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 16px;
+        color: #d1d5db;
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    @media (max-width: 768px) {
+        .category-tabs {
+            flex-direction: column;
+        }
+
+        .subject-card {
+            flex-direction: column;
+        }
+
+        .search-container {
+            margin-bottom: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block nav_title %}Credit Completed Subjects{% endblock %}
+
+{% block nav_breadcrumb %}
+<a href="{% url 'enrollment:transferee_list' %}">Transferees</a>
+<span>&rsaquo;</span>
+<a href="{% url 'enrollment:transferee_detail' transferee.pk %}">{{ transferee.first_name }}</a>
+<span>&rsaquo;</span>
+<span>Credit Subjects</span>
+{% endblock %}
+
+{% block nav_action %}
+<a href="{% url 'enrollment:transferee_detail' transferee.pk %}" class="text-sm">← Back</a>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Credit Completed Subjects</h1>
+    <p class="text-gray-600">Select subjects {{ transferee.first_name }} {{ transferee.last_name }} has completed at their previous school</p>
+</div>
+
+<!-- Progress Indicator -->
+<div class="mb-8">
+    <div class="flex items-center text-sm">
+        <span class="flex items-center justify-center h-8 w-8 rounded-full bg-green-600 text-white font-semibold">✓</span>
+        <span class="ml-2 text-gray-900 font-medium">Account Created</span>
+        <div class="flex-1 mx-4 h-1 bg-gray-300"></div>
+        <span class="flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-semibold">2</span>
+        <span class="ml-2 text-gray-900 font-medium">Credit Subjects</span>
+        <div class="flex-1 mx-4 h-1 bg-gray-300"></div>
+        <span class="flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 text-gray-600 font-semibold">3</span>
+        <span class="ml-2 text-gray-600">Finish</span>
     </div>
 </div>
-{% else %}
+
+<!-- Form Start -->
+<form id="creditForm" method="post" class="bg-white rounded-lg shadow p-6">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_subjects">
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <svg class="search-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search subjects by code or title...">
+        <div class="search-results-count">
+            <span id="resultCount">Loading subjects...</span>
+        </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="category-tabs">
+        <button type="button" class="category-tab active" data-category="all">
+            All Subjects
+            <span class="category-count">(<span id="count-all">0</span>)</span>
+        </button>
+        <button type="button" class="category-tab" data-category="major">
+            Major <span class="category-count">(<span id="count-major">0</span>)</span>
+        </button>
+        <button type="button" class="category-tab" data-category="minor">
+            Minor <span class="category-count">(<span id="count-minor">0</span>)</span>
+        </button>
+    </div>
+
+    <!-- Selected Count -->
+    <div class="selected-count" id="selectedCount" style="display: none;">
+        <span>Subjects Selected</span>
+        <span class="selected-count-value"><span id="selectedValue">0</span>/<span id="totalCount">0</span></span>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="subjects-grid" id="subjectsGrid">
+        <!-- Populated by JavaScript -->
+    </div>
+
+    {% if not available_subjects %}
     <!-- No Subjects Available -->
-    <div class="bg-white rounded-lg shadow p-8 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <div class="empty-state">
+        <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No subjects available</h3>
-        <p class="mt-1 text-sm text-gray-500">No subjects found for this program.</p>
-        <div class="mt-6">
-            <button type="submit" name="action" value="skip_subjects"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
-                Continue Without Credits
-            </button>
+        <h3 class="text-sm font-medium text-gray-900">No subjects available</h3>
+        <p class="text-sm text-gray-500 mt-1">No subjects found for this program.</p>
+    </div>
+    {% endif %}
+
+    <!-- Form Actions -->
+    <div class="flex flex-col sm:flex-row gap-4 mt-8">
+        <button type="button" name="action" value="skip_subjects"
+                onclick="document.querySelector('input[name=action]').value='skip_subjects'; document.getElementById('creditForm').submit();"
+                class="px-6 py-3 border-2 border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+            Skip (No Credits)
+        </button>
+        <button type="submit" class="px-6 py-3 border-2 border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 transition-colors"
+                id="submitBtn" disabled>
+            Credit Selected Subjects
+        </button>
+    </div>
+</form>
+
+<!-- Student Info Summary -->
+<div class="mt-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Student Information</h3>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div>
+            <p class="text-xs font-semibold text-gray-600 uppercase">Student ID</p>
+            <p class="text-lg font-mono text-purple-600 font-bold">{{ student.student_id }}</p>
+        </div>
+        <div>
+            <p class="text-xs font-semibold text-gray-600 uppercase">Username</p>
+            <p class="text-sm font-mono text-gray-900">{{ student.user.username }}</p>
+        </div>
+        <div>
+            <p class="text-xs font-semibold text-gray-600 uppercase">Program</p>
+            <p class="text-sm text-gray-900">{{ transferee.program.name }}</p>
         </div>
     </div>
-{% endif %}
 </div>
+{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script>
+    // Subject Data
+    const subjects = {{ available_subjects|safe }};
+    let filteredSubjects = subjects;
+    let selectedSubjects = new Set();
+    let currentCategory = 'all';
+
+    // Categorize subjects
+    const categorized = {
+        major: subjects.filter(s => s.type === 'major'),
+        minor: subjects.filter(s => s.type === 'minor'),
+        all: subjects
+    };
+
+    function renderSubjects() {
+        const grid = document.getElementById('subjectsGrid');
+        grid.innerHTML = '';
+
+        if (filteredSubjects.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-sm font-medium text-gray-900">No subjects found</h3>
+                    <p class="text-sm text-gray-500 mt-1">Try adjusting your search or filter.</p>
+                </div>
+            `;
+            return;
+        }
+
+        filteredSubjects.forEach(subject => {
+            const isSelected = selectedSubjects.has(subject.id);
+            const card = document.createElement('label');
+            card.className = `subject-card ${isSelected ? 'selected' : ''}`;
+            card.innerHTML = `
+                <input type="checkbox" name="subject_ids" value="${subject.id}"
+                       ${isSelected ? 'checked' : ''}
+                       onchange="updateSelection()">
+                <div class="subject-info">
+                    <div class="subject-code">${subject.code}</div>
+                    <div class="subject-title">${subject.title}</div>
+                    <div class="subject-meta">
+                        <span>${subject.units} units</span>
+                        <span class="subject-type ${subject.type}">${subject.type_display}</span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        document.querySelectorAll('input[name="subject_ids"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelection);
+        });
+    }
+
+    function updateSelection() {
+        selectedSubjects.clear();
+        document.querySelectorAll('input[name="subject_ids"]:checked').forEach(cb => {
+            selectedSubjects.add(parseInt(cb.value));
+        });
+
+        const count = selectedSubjects.size;
+        document.getElementById('selectedValue').textContent = count;
+        document.getElementById('totalCount').textContent = filteredSubjects.length;
+        document.getElementById('selectedCount').style.display = count > 0 ? 'flex' : 'none';
+        document.getElementById('submitBtn').disabled = count === 0;
+
+        // Update visual state
+        document.querySelectorAll('.subject-card').forEach(card => {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            card.classList.toggle('selected', checkbox.checked);
+        });
+    }
+
+    function filterSubjects(query, category) {
+        currentCategory = category;
+        let base = category === 'all' ? subjects : categorized[category];
+
+        if (query.trim() === '') {
+            filteredSubjects = base;
+        } else {
+            const q = query.toLowerCase();
+            filteredSubjects = base.filter(s =>
+                s.code.toLowerCase().includes(q) ||
+                s.title.toLowerCase().includes(q)
+            );
+        }
+
+        renderSubjects();
+        updateSelection();
+        updateResultCount();
+    }
+
+    function updateResultCount() {
+        const query = document.getElementById('searchInput').value;
+        if (query.trim()) {
+            document.getElementById('resultCount').textContent = `${filteredSubjects.length} result${filteredSubjects.length !== 1 ? 's' : ''} found`;
+        } else {
+            document.getElementById('resultCount').textContent = `${filteredSubjects.length} subject${filteredSubjects.length !== 1 ? 's' : ''}`;
+        }
+    }
+
+    function updateCategoryCounts() {
+        document.getElementById('count-all').textContent = subjects.length;
+        document.getElementById('count-major').textContent = categorized.major.length;
+        document.getElementById('count-minor').textContent = categorized.minor.length;
+    }
+
+    // Event Listeners
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        filterSubjects(e.target.value, currentCategory);
+    });
+
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            filterSubjects(document.getElementById('searchInput').value, tab.dataset.category);
+        });
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCategoryCounts();
+        renderSubjects();
+        updateResultCount();
+        updateSelection();
+    });
+</script>
 {% endblock %}

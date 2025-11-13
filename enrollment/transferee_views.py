@@ -363,6 +363,7 @@ def transferee_credit_subjects(request, pk):
     Registrar/Admission manually inputs completed subjects.
     """
     from academics.models import Subject
+    import json
 
     transferee = get_object_or_404(TransfereeEnrollment, pk=pk)
 
@@ -429,12 +430,28 @@ def transferee_credit_subjects(request, pk):
 
     # Get subjects available for the program
     program = transferee.program
-    available_subjects = Subject.objects.filter(program=program).order_by('code')
+    subjects_list = list(
+        Subject.objects.filter(program=program).values(
+            'id', 'code', 'title', 'units', 'type'
+        ).order_by('code')
+    )
+
+    # Add display labels for subject types
+    for subject in subjects_list:
+        type_display_map = {
+            'major': 'Major',
+            'minor': 'Minor',
+            'elective': 'Elective',
+        }
+        subject['type_display'] = type_display_map.get(subject['type'], subject['type'])
+
+    # Serialize to JSON for JavaScript
+    available_subjects_json = json.dumps(subjects_list)
 
     context = {
         'transferee': transferee,
         'student': student,
-        'available_subjects': available_subjects,
+        'available_subjects': available_subjects_json,
     }
     return render(request, 'transferee/transferee_credit_subjects.html', context)
 
