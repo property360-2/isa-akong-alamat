@@ -61,6 +61,37 @@
         background-color: rgb(243, 232, 255);
         color: rgb(126, 34, 206);
     }
+
+    /* Table responsive styling */
+    table {
+        width: 100%;
+        table-layout: auto;
+    }
+
+    table td, table th {
+        padding: 0.75rem 1.5rem;
+        text-align: left;
+    }
+
+    table th:last-child, table td:last-child {
+        text-align: right;
+    }
+
+    /* Ensure actions column is visible */
+    table tbody td:last-child {
+        white-space: nowrap;
+        padding-right: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            font-size: 0.875rem;
+        }
+
+        table td, table th {
+            padding: 0.5rem 0.75rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -122,7 +153,7 @@
 
     <!-- Transferees Table -->
     {% if transferees %}
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
