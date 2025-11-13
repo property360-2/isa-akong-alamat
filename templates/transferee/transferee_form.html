@@ -1,14 +1,19 @@
-{% extends 'base.html' %}
+{% extends 'registrar_base.html' %}
 
 {% block title %}New Transferee - Richwell School Portal{% endblock %}
 
-{% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Register New Transferee Student</h1>
-        <p class="text-gray-600 text-sm mt-1">Input transferee information and manage course credits</p>
-    </div>
+{% block nav_title %}New Transferee{% endblock %}
+
+{% block nav_action %}
+<a href="{% url 'enrollment:transferee_list' %}" class="text-sm">← Back</a>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Register New Transferee Student</h1>
+    <p class="text-gray-600">Input transferee information and manage course credits</p>
+</div>
 
     <!-- Error Messages -->
     {% if errors %}
@@ -245,5 +250,4 @@
             programSelect.dispatchEvent(new Event('change'));
         }
     </script>
-</div>
 {% endblock %}

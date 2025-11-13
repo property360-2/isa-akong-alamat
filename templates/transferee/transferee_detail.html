@@ -1,8 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'registrar_base.html' %}
 
 {% block title %}Transferee Details - Richwell School Portal{% endblock %}
 
+{% block nav_title %}{{ transferee.first_name }} {{ transferee.last_name }}{% endblock %}
+
+{% block nav_breadcrumb %}
+<a href="{% url 'enrollment:transferee_list' %}">Transferees</a>
+<span>&rsaquo;</span>
+<span>{{ transferee.first_name }}</span>
+{% endblock %}
+
+{% block nav_action %}
+<a href="{% url 'enrollment:transferee_list' %}" class="text-sm">← Back</a>
+{% endblock %}
+
 {% block extra_head %}
+{{ block.super }}
 <style>
     .status-badge {
         display: inline-block;
@@ -66,13 +79,13 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-start mb-8">
+{% block main_content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex justify-between items-start">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">{{ transferee.first_name }} {{ transferee.last_name }}</h1>
-            <p class="text-gray-600 text-sm mt-1">{{ transferee.email }}</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-1">{{ transferee.first_name }} {{ transferee.last_name }}</h1>
+            <p class="text-gray-600">{{ transferee.email }}</p>
         </div>
         <span class="status-badge status-{{ transferee.status|slugify }}">
             {% if transferee.status == 'pending_credential_input' %}
@@ -371,4 +384,5 @@
     </div>
     {% endif %}
 </div>
+    </div>
 {% endblock %}

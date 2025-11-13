@@ -1,8 +1,15 @@
-{% extends 'base.html' %}
+{% extends 'registrar_base.html' %}
 
 {% block title %}Transferee Management - Richwell School Portal{% endblock %}
 
+{% block nav_title %}Transferee Management{% endblock %}
+
+{% block nav_action %}
+<a href="{% url 'enrollment:transferee_create' %}" class="text-sm">+ New Transferee</a>
+{% endblock %}
+
 {% block extra_head %}
+{{ block.super }}
 <style>
     .status-badge {
         display: inline-block;
@@ -57,22 +64,12 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Transferee Management</h1>
-            <p class="text-gray-600 text-sm mt-1">Manage transferee enrollments and credentials</p>
-        </div>
-        <a href="{% url 'enrollment:transferee_create' %}"
-           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            New Transferee
-        </a>
-    </div>
+{% block main_content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Transferee Management</h1>
+    <p class="text-gray-600">Manage transferee enrollments and credentials</p>
+</div>
 
     <!-- Filters and Search -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -222,5 +219,4 @@
         </div>
     </div>
     {% endif %}
-</div>
 {% endblock %}
