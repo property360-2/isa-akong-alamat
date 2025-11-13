@@ -346,12 +346,6 @@
         subjects = JSON.parse({{ available_subjects|default:"\"[]\""|safe }});
     } catch(e) {
         console.error('Error parsing subjects:', e);
-        console.error('Raw value:', {{ available_subjects|default:"\"[]\""|safe }});
-    }
-
-    console.log('Subjects loaded:', subjects.length, 'subjects');
-    if (subjects.length === 0) {
-        console.warn('No subjects loaded! Check if available_subjects is empty');
     }
 
     let filteredSubjects = subjects;
@@ -365,7 +359,6 @@
     } catch(e) {
         console.error('Error parsing credited subjects:', e);
     }
-    console.log('Already credited:', creditedSubjectIds.length, 'subjects');
     if (creditedSubjectIds && creditedSubjectIds.length > 0) {
         creditedSubjectIds.forEach(id => selectedSubjects.add(id));
     }

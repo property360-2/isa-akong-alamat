@@ -456,15 +456,12 @@ def transferee_credit_subjects(request, pk):
 
     # Get subjects available for the program
     program = transferee.program
-    print(f"DEBUG: Getting subjects for program: {program.id} - {program.name}")
 
     subjects_list = list(
         Subject.objects.filter(program=program).values(
             'id', 'code', 'title', 'units', 'type'
         ).order_by('code')
     )
-
-    print(f"DEBUG: Found {len(subjects_list)} subjects")
 
     # Add display labels for subject types and convert Decimal to float
     for subject in subjects_list:
@@ -479,7 +476,6 @@ def transferee_credit_subjects(request, pk):
 
     # Serialize to JSON for JavaScript
     available_subjects_json = json.dumps(subjects_list)
-    print(f"DEBUG: JSON length: {len(available_subjects_json)}")
 
     # Get currently credited subject IDs
     from enrollment.models import StudentSubject
@@ -489,8 +485,6 @@ def transferee_credit_subjects(request, pk):
             status='completed'
         ).values_list('subject_id', flat=True)
     )
-
-    print(f"DEBUG: Already credited: {len(credited_subject_ids)} subjects")
 
     context = {
         'transferee': transferee,
