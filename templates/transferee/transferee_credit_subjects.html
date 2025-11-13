@@ -340,14 +340,28 @@
 
 <script>
     // Subject Data
-    const subjects = {{ available_subjects|safe }};
+    let subjects = [];
+    try {
+        subjects = {{ available_subjects|default:"[]"|safe }};
+    } catch(e) {
+        console.error('Error parsing subjects:', e);
+    }
+
+    console.log('Subjects loaded:', subjects.length, 'subjects');
+    if (subjects.length === 0) {
+        console.warn('No subjects loaded! Check if available_subjects is empty');
+    }
+
     let filteredSubjects = subjects;
     let selectedSubjects = new Set();
     let currentCategory = 'all';
 
     // Load already credited subjects
-    const creditedSubjectIds = {{ credited_subject_ids|safe }};
-    creditedSubjectIds.forEach(id => selectedSubjects.add(id));
+    const creditedSubjectIds = {{ credited_subject_ids|default:"[]"|safe }};
+    console.log('Already credited:', creditedSubjectIds.length, 'subjects');
+    if (creditedSubjectIds && creditedSubjectIds.length > 0) {
+        creditedSubjectIds.forEach(id => selectedSubjects.add(id));
+    }
 
     // Categorize subjects
     const categorized = {
