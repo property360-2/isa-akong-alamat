@@ -376,7 +376,7 @@ def transferee_credit_subjects(request, pk):
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        # Add subjects to credit
+        # Add/Update subjects to credit
         if action == 'add_subjects':
             subject_ids = request.POST.getlist('subject_ids')
 
@@ -386,13 +386,34 @@ def transferee_credit_subjects(request, pk):
 
             try:
                 with transaction.atomic():
-                    for subject_id in subject_ids:
+                    from enrollment.models import StudentSubject, Term
+                    active_term = Term.objects.filter(is_active=True).first()
+
+                    # Get previously credited subjects for this student
+                    from enrollment.models import StudentSubject
+                    previously_credited = StudentSubject.objects.filter(
+                        student=student,
+                        status='completed'
+                    ).values_list('subject_id', flat=True)
+
+                    # Convert to set of integers for comparison
+                    previous_ids = set(int(id) for id in previously_credited)
+                    new_ids = set(int(id) for id in subject_ids)
+
+                    # Remove subjects that are no longer selected
+                    to_remove = previous_ids - new_ids
+                    if to_remove:
+                        StudentSubject.objects.filter(
+                            student=student,
+                            subject_id__in=to_remove,
+                            status='completed'
+                        ).delete()
+
+                    # Add new subjects that weren't previously credited
+                    to_add = new_ids - previous_ids
+                    for subject_id in to_add:
                         try:
                             subject = Subject.objects.get(pk=subject_id)
-
-                            # Create StudentSubject record with 'completed' status
-                            from enrollment.models import StudentSubject, Term
-                            active_term = Term.objects.filter(is_active=True).first()
 
                             if active_term:
                                 StudentSubject.objects.create(
@@ -417,8 +438,13 @@ def transferee_credit_subjects(request, pk):
                         except Subject.DoesNotExist:
                             continue
 
-                messages.success(request, f'Successfully credited {len(subject_ids)} subjects to transferee.')
-                return redirect('enrollment:transferee_finish_enrollment', pk=pk)
+                if to_remove:
+                    messages.success(request, f'Updated credited subjects. Removed {len(to_remove)}, added {len(to_add)} subjects.')
+                else:
+                    messages.success(request, f'Successfully credited {len(to_add)} new subjects to transferee.')
+
+                # Return to detail page instead of finish if editing
+                return redirect('enrollment:transferee_detail', pk=pk)
 
             except Exception as e:
                 messages.error(request, f'Error crediting subjects: {str(e)}')
@@ -450,10 +476,20 @@ def transferee_credit_subjects(request, pk):
     # Serialize to JSON for JavaScript
     available_subjects_json = json.dumps(subjects_list)
 
+    # Get currently credited subject IDs
+    from enrollment.models import StudentSubject
+    credited_subject_ids = list(
+        StudentSubject.objects.filter(
+            student=student,
+            status='completed'
+        ).values_list('subject_id', flat=True)
+    )
+
     context = {
         'transferee': transferee,
         'student': student,
         'available_subjects': available_subjects_json,
+        'credited_subject_ids': json.dumps(credited_subject_ids),
     }
     return render(request, 'transferee/transferee_credit_subjects.html', context)
 

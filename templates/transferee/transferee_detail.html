@@ -364,10 +364,17 @@
                 ✓ Account is ready. The transferee can now login and enroll in subjects for the next term.
             </p>
         </div>
-        <div class="mt-4">
+        <div class="mt-4 flex flex-col sm:flex-row gap-4">
             <a href="{% url 'enrollment:transferee_account_details' transferee.pk %}"
                class="inline-flex items-center text-primary hover:text-blue-700 font-medium">
                 View Account Details
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+            <a href="{% url 'enrollment:transferee_credit_subjects' transferee.pk %}"
+               class="inline-flex items-center text-primary hover:text-blue-700 font-medium">
+                Edit Credited Subjects
                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>

@@ -345,6 +345,10 @@
     let selectedSubjects = new Set();
     let currentCategory = 'all';
 
+    // Load already credited subjects
+    const creditedSubjectIds = {{ credited_subject_ids|safe }};
+    creditedSubjectIds.forEach(id => selectedSubjects.add(id));
+
     // Categorize subjects
     const categorized = {
         major: subjects.filter(s => s.type === 'major'),
