@@ -43,5 +43,7 @@ urlpatterns = [
     path('registrar/transferee/create/', transferee_views.transferee_create, name='transferee_create'),
     path('registrar/transferee/<int:pk>/', transferee_views.transferee_detail, name='transferee_detail'),
     path('registrar/transferee/<int:pk>/account-details/', transferee_views.transferee_account_details, name='transferee_account_details'),
+    path('registrar/transferee/<int:pk>/credit-subjects/', transferee_views.transferee_credit_subjects, name='transferee_credit_subjects'),
+    path('registrar/transferee/<int:pk>/finish/', transferee_views.transferee_finish_enrollment, name='transferee_finish_enrollment'),
 ]
 

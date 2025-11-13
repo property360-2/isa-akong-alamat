@@ -293,8 +293,8 @@ def transferee_detail(request, pk):
                 request.session['transferee_password'] = generated_password
                 request.session['transferee_student_id'] = student.student_id
 
-                messages.success(request, 'Account created successfully! Credentials have been generated.')
-                return redirect('enrollment:transferee_account_details', pk=pk)
+                messages.success(request, 'Account created successfully! Now add completed subjects from previous school.')
+                return redirect('enrollment:transferee_credit_subjects', pk=pk)
 
             except Exception as e:
                 messages.error(request, f'Error creating account: {str(e)}')
@@ -353,6 +353,116 @@ def transferee_account_details(request, pk):
         'student_id': student_id,
     }
     return render(request, 'transferee/transferee_account_details.html', context)
+
+
+@login_required
+@role_required('registrar', 'admission')
+def transferee_credit_subjects(request, pk):
+    """
+    Credit subjects for transferee from their previous school/course.
+    Registrar/Admission manually inputs completed subjects.
+    """
+    from academics.models import Subject
+
+    transferee = get_object_or_404(TransfereeEnrollment, pk=pk)
+
+    if not transferee.created_user:
+        messages.error(request, 'Account must be created before crediting subjects.')
+        return redirect('enrollment:transferee_detail', pk=pk)
+
+    student = transferee.created_user.student
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        # Add subjects to credit
+        if action == 'add_subjects':
+            subject_ids = request.POST.getlist('subject_ids')
+
+            if not subject_ids:
+                messages.warning(request, 'No subjects selected.')
+                return redirect('enrollment:transferee_credit_subjects', pk=pk)
+
+            try:
+                with transaction.atomic():
+                    for subject_id in subject_ids:
+                        try:
+                            subject = Subject.objects.get(pk=subject_id)
+
+                            # Create StudentSubject record with 'completed' status
+                            from enrollment.models import StudentSubject, Term
+                            active_term = Term.objects.filter(is_active=True).first()
+
+                            if active_term:
+                                StudentSubject.objects.create(
+                                    student=student,
+                                    subject=subject,
+                                    term=active_term,
+                                    status='completed',
+                                )
+
+                                # Log audit trail
+                                AuditTrail.objects.create(
+                                    actor=request.user,
+                                    action='credit_transferee_subject',
+                                    entity='StudentSubject',
+                                    entity_id=subject.id,
+                                    new_value_json={
+                                        'student': student.id,
+                                        'subject': subject.code,
+                                        'status': 'completed',
+                                    }
+                                )
+                        except Subject.DoesNotExist:
+                            continue
+
+                messages.success(request, f'Successfully credited {len(subject_ids)} subjects to transferee.')
+                return redirect('enrollment:transferee_finish_enrollment', pk=pk)
+
+            except Exception as e:
+                messages.error(request, f'Error crediting subjects: {str(e)}')
+                return redirect('enrollment:transferee_credit_subjects', pk=pk)
+
+        # Skip subject crediting and finish
+        elif action == 'skip_subjects':
+            return redirect('enrollment:transferee_finish_enrollment', pk=pk)
+
+    # Get subjects available for the program
+    program = transferee.program
+    available_subjects = Subject.objects.filter(program=program).order_by('code')
+
+    context = {
+        'transferee': transferee,
+        'student': student,
+        'available_subjects': available_subjects,
+    }
+    return render(request, 'transferee/transferee_credit_subjects.html', context)
+
+
+@login_required
+@role_required('registrar', 'admission')
+def transferee_finish_enrollment(request, pk):
+    """
+    Final step: Show account details and confirm enrollment completion.
+    """
+    transferee = get_object_or_404(TransfereeEnrollment, pk=pk)
+
+    if not transferee.created_user:
+        messages.error(request, 'Account must be created before completing enrollment.')
+        return redirect('enrollment:transferee_detail', pk=pk)
+
+    # Get credentials from session if available
+    username = request.session.pop('transferee_username', None)
+    password = request.session.pop('transferee_password', None)
+    student_id = request.session.pop('transferee_student_id', None)
+
+    context = {
+        'transferee': transferee,
+        'username': username,
+        'password': password,
+        'student_id': student_id,
+    }
+    return render(request, 'transferee/transferee_finish_enrollment.html', context)
 
 
 @login_required
