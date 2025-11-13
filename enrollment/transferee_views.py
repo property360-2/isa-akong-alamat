@@ -140,7 +140,8 @@ def transferee_create(request):
             program = Program.objects.get(pk=program_id)
             curriculum = Curriculum.objects.get(pk=curriculum_id)
 
-            # Create transferee enrollment
+            # Create transferee enrollment with TOR already verified
+            # (Single flow - no separate verification step)
             transferee = TransfereeEnrollment.objects.create(
                 first_name=first_name,
                 middle_name=middle_name,
@@ -154,6 +155,10 @@ def transferee_create(request):
                 program=program,
                 curriculum=curriculum,
                 notes=notes,
+                status='tor_verified',  # Skip pending verification, go directly to verified
+                tor_verified=True,
+                tor_verified_at=datetime.now(),
+                tor_verified_by=request.user,
             )
 
             # Audit trail
@@ -172,7 +177,7 @@ def transferee_create(request):
                 }
             )
 
-            messages.success(request, f'Transferee enrollment created for {first_name} {last_name}. Status: Pending Credential Input')
+            messages.success(request, f'Transferee enrollment created for {first_name} {last_name}. Ready to create account.')
             return redirect('enrollment:transferee_detail', pk=transferee.id)
 
         except Program.DoesNotExist:
@@ -194,40 +199,16 @@ def transferee_create(request):
 @role_required('registrar', 'admission')
 def transferee_detail(request, pk):
     """
-    View transferee enrollment details, verify TOR, and manage credits.
+    View transferee enrollment details and manage account creation.
+    TOR is verified during initial enrollment creation (single flow).
     """
     transferee = get_object_or_404(TransfereeEnrollment, pk=pk)
 
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        # Verify TOR
-        if action == 'verify_tor':
-            if transferee.status != 'pending_tor_verification':
-                messages.error(request, 'Can only verify TOR for enrollments pending verification.')
-                return redirect('enrollment:transferee_detail', pk=pk)
-
-            with transaction.atomic():
-                transferee.status = 'tor_verified'
-                transferee.tor_verified = True
-                transferee.tor_verified_at = datetime.now()
-                transferee.tor_verified_by = request.user
-                transferee.save()
-
-                # Audit trail
-                AuditTrail.objects.create(
-                    actor=request.user,
-                    action='verify_transferee_tor',
-                    entity='TransfereeEnrollment',
-                    entity_id=transferee.id,
-                    new_value_json={'tor_verified': True}
-                )
-
-            messages.success(request, 'TOR verified successfully! Ready to create account.')
-            return redirect('enrollment:transferee_detail', pk=pk)
-
-        # Create account
-        elif action == 'create_account':
+        # Create account (direct flow - no TOR verification step needed)
+        if action == 'create_account':
             if transferee.status != 'tor_verified':
                 messages.error(request, 'TOR must be verified before creating account.')
                 return redirect('enrollment:transferee_detail', pk=pk)

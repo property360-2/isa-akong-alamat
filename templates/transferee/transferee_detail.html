@@ -256,29 +256,10 @@
     <!-- Action Section -->
     {% if transferee.status != 'rejected' and transferee.status != 'account_created' %}
     <div class="bg-white rounded-lg shadow p-8 mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Actions</h2>
-
-        {% if transferee.status == 'pending_tor_verification' %}
-        <!-- Verify TOR Form -->
-        <form method="post" class="mb-6">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="verify_tor">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium text-green-900">Verify TOR</h3>
-                        <p class="text-sm text-green-700 mt-1">After verifying the hardcopy of the Transcript of Records, click the button below to mark as verified.</p>
-                    </div>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium whitespace-nowrap">
-                        Verify TOR
-                    </button>
-                </div>
-            </div>
-        </form>
-        {% endif %}
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Next Step</h2>
 
         {% if transferee.status == 'tor_verified' %}
-        <!-- Create Account Form -->
+        <!-- Create Account Form (Direct flow - no approval needed) -->
         <form method="post" class="mb-6">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_account">
@@ -286,7 +267,7 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <h3 class="text-lg font-medium text-blue-900">Create Student Account</h3>
-                        <p class="text-sm text-blue-700 mt-1">Generate username, password, and student ID for this transferee.</p>
+                        <p class="text-sm text-blue-700 mt-1">Generate username, password, and student ID. Print credentials on paper to give to student.</p>
                     </div>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium whitespace-nowrap">
                         Create Account
