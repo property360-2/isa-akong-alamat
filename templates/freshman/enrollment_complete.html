@@ -32,6 +32,23 @@
                     <p class="text-gray-600">You're all set to begin your academic journey!</p>
                 </div>
 
+                <!-- Student ID Alert -->
+                <div class="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 mb-8">
+                    <h2 class="font-semibold text-blue-900 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                        </svg>
+                        Your Student ID
+                    </h2>
+                    <div class="bg-white rounded p-4 border border-blue-200">
+                        <p class="text-xs text-gray-600 uppercase tracking-wider mb-2">Student Identification Number</p>
+                        <p class="text-3xl font-bold text-blue-600 font-mono">{{ student.student_id }}</p>
+                        <p class="text-sm text-gray-600 mt-3">
+                            This is your unique student identification number. Keep it safe and use it for all college transactions and inquiries.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Account Summary -->
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8">
                     <h2 class="font-semibold text-gray-900 mb-4">Your Enrollment Summary</h2>

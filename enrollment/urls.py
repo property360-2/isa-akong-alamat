@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import student_enrollment_views
+from . import transferee_views
 
 app_name = 'enrollment'
 
@@ -36,5 +37,11 @@ urlpatterns = [
     path('student/term/<int:term_id>/', student_enrollment_views.student_view_enrollment, name='view_enrollment'),
     path('student/grade-history/', student_enrollment_views.student_grade_history, name='grade_history'),
     path('api/prerequisites/', student_enrollment_views.api_check_prerequisites, name='api_prerequisites'),
+
+    # Transferee Enrollment Management (Registrar/Admission - Dashboard Only)
+    path('registrar/transferee/', transferee_views.transferee_list, name='transferee_list'),
+    path('registrar/transferee/create/', transferee_views.transferee_create, name='transferee_create'),
+    path('registrar/transferee/<int:pk>/', transferee_views.transferee_detail, name='transferee_detail'),
+    path('registrar/transferee/<int:pk>/account-details/', transferee_views.transferee_account_details, name='transferee_account_details'),
 ]
 

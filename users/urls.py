@@ -13,4 +13,7 @@ urlpatterns = [
     path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
     path('dashboard/admission/', views.admission_dashboard, name='admission_dashboard'),
     path('dashboard/dean/', views.dean_dashboard, name='dean_dashboard'),
+
+    # Student account settings
+    path('account-settings/', views.student_account_settings, name='account_settings'),
 ]

@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Transferee Enrollment - Richwell School Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Transferee Enrollment</h1>
+        <p class="text-gray-600 text-sm mt-1">Manually input transferee credentials for manual enrollment</p>
+    </div>
+
+    <!-- Error Messages -->
+    {% if errors %}
+    <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-start">
+            <svg class="h-5 w-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+                <ul class="mt-2 list-disc list-inside space-y-1">
+                    {% for error in errors %}
+                    <li class="text-sm text-red-700">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <form method="post" class="bg-white rounded-lg shadow p-8 space-y-8">
+        {% csrf_token %}
+
+        <!-- Personal Information Section -->
+        <div class="border-b border-gray-200 pb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- First Name -->
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        First Name *
+                    </label>
+                    <input type="text" id="first_name" name="first_name"
+                           value="{{ form_data.first_name }}"
+                           required
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Middle Name -->
+                <div>
+                    <label for="middle_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Middle Name
+                    </label>
+                    <input type="text" id="middle_name" name="middle_name"
+                           value="{{ form_data.middle_name }}"
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name *
+                    </label>
+                    <input type="text" id="last_name" name="last_name"
+                           value="{{ form_data.last_name }}"
+                           required
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Suffix -->
+                <div>
+                    <label for="suffix" class="block text-sm font-medium text-gray-700 mb-2">
+                        Suffix (Jr., Sr., III, etc.)
+                    </label>
+                    <input type="text" id="suffix" name="suffix"
+                           value="{{ form_data.suffix }}"
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email *
+                    </label>
+                    <input type="email" id="email" name="email"
+                           value="{{ form_data.email }}"
+                           required
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                    <p class="text-xs text-gray-500 mt-1">Will be used for account creation</p>
+                </div>
+
+                <!-- Mobile -->
+                <div>
+                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
+                        Mobile Number
+                    </label>
+                    <input type="tel" id="mobile" name="mobile"
+                           value="{{ form_data.mobile }}"
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+            </div>
+        </div>
+
+        <!-- Transfer Information Section -->
+        <div class="border-b border-gray-200 pb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Transfer Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Transfer Type -->
+                <div>
+                    <label for="transfer_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Transfer Type *
+                    </label>
+                    <select id="transfer_type" name="transfer_type" required
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                        <option value="">-- Select Transfer Type --</option>
+                        <option value="same_school" {% if form_data.transfer_type == 'same_school' %}selected{% endif %}>Transfer from Another Course (Same School)</option>
+                        <option value="external_school" {% if form_data.transfer_type == 'external_school' %}selected{% endif %}>Transfer from Another School</option>
+                    </select>
+                </div>
+
+                <!-- Source School -->
+                <div>
+                    <label for="source_school" class="block text-sm font-medium text-gray-700 mb-2">
+                        Source School Name *
+                    </label>
+                    <input type="text" id="source_school" name="source_school"
+                           value="{{ form_data.source_school }}"
+                           placeholder="e.g., Richwell College"
+                           required
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+
+                <!-- Source Program -->
+                <div class="md:col-span-2">
+                    <label for="source_program" class="block text-sm font-medium text-gray-700 mb-2">
+                        Source Program Name *
+                    </label>
+                    <input type="text" id="source_program" name="source_program"
+                           value="{{ form_data.source_program }}"
+                           placeholder="e.g., Bachelor of Science in Computer Science"
+                           required
+                           class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                </div>
+            </div>
+        </div>
+
+        <!-- Program Assignment Section -->
+        <div class="border-b border-gray-200 pb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Target Program Assignment</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Program -->
+                <div>
+                    <label for="program" class="block text-sm font-medium text-gray-700 mb-2">
+                        Target Program *
+                    </label>
+                    <select id="program" name="program" required
+                            x-data="{ program: '{{ form_data.program }}' }"
+                            @change="program = $el.value"
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                        <option value="">-- Select Program --</option>
+                        {% for program in programs %}
+                        <option value="{{ program.id }}" {% if form_data.program|stringformat:"s" == program.id|stringformat:"s" %}selected{% endif %}>{{ program.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Curriculum -->
+                <div>
+                    <label for="curriculum" class="block text-sm font-medium text-gray-700 mb-2">
+                        Target Curriculum *
+                    </label>
+                    <select id="curriculum" name="curriculum" required
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                        <option value="">-- First select a program --</option>
+                        {% if form_data.curriculum %}
+                        <option value="{{ form_data.curriculum }}" selected>{{ form_data.curriculum }}</option>
+                        {% endif %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Curricula will load based on selected program</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Additional Information</h2>
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                    Notes
+                </label>
+                <textarea id="notes" name="notes" rows="4"
+                          placeholder="Any additional notes about this transferee..."
+                          class="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"></textarea>
+                <p class="text-xs text-gray-500 mt-1">Optional field for internal notes</p>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end space-x-4 pt-8 border-t border-gray-200">
+            <a href="{% url 'enrollment:transferee_list' %}"
+               class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
+                Create Transferee Enrollment
+            </button>
+        </div>
+    </form>
+
+    <!-- Curriculum Loading Script -->
+    <script>
+        const programSelect = document.getElementById('program');
+        const curriculumSelect = document.getElementById('curriculum');
+
+        // Curriculum data from backend
+        const curriculumData = {
+            {% for program in programs %}
+            '{{ program.id }}': [
+                {% for curriculum in program.curricula.all %}
+                { id: '{{ curriculum.id }}', name: '{{ curriculum.version }} ({{ curriculum.effective_sy }})' },
+                {% endfor %}
+            ],
+            {% endfor %}
+        };
+
+        programSelect.addEventListener('change', function() {
+            const selectedProgram = this.value;
+            curriculumSelect.innerHTML = '<option value="">-- Select Curriculum --</option>';
+
+            if (selectedProgram && curriculumData[selectedProgram]) {
+                curriculumData[selectedProgram].forEach(curriculum => {
+                    const option = document.createElement('option');
+                    option.value = curriculum.id;
+                    option.textContent = curriculum.name;
+                    curriculumSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Load initial curriculum if program is pre-selected
+        if (programSelect.value) {
+            programSelect.dispatchEvent(new Event('change'));
+        }
+    </script>
+</div>
+{% endblock %}

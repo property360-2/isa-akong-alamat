@@ -83,6 +83,42 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-yellow-200 hover:border-yellow-400">
+            <a href="{% url 'enrollment:transferee_list' %}" class="block p-5 hover:bg-yellow-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 2.748m0 0a4 4 0 010 2.748M19 12a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Pending Transferees</dt>
+                            <dd class="text-2xl font-semibold text-yellow-600">{{ pending_transferees }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border border-green-200 hover:border-green-400">
+            <a href="{% url 'enrollment:transferee_list' %}?status=tor_verified" class="block p-5 hover:bg-green-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Ready to Create Account</dt>
+                            <dd class="text-2xl font-semibold text-green-600">{{ tor_verified_transferees }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
     <!-- Active Terms -->
@@ -211,6 +247,16 @@
             <div class="ml-4">
                 <div class="text-sm font-medium text-gray-900">Admissions</div>
                 <div class="text-xs text-gray-600">Coming soon</div>
+            </div>
+        </a>
+
+        <a href="{% url 'enrollment:transferee_list' %}" class="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors border border-yellow-300">
+            <svg class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 2.748m0 0a4 4 0 010 2.748M19 12a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">Transferee Management</div>
+                <div class="text-xs text-gray-600">Enroll transferees & credit subjects</div>
             </div>
         </a>
     </div>

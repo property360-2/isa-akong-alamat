@@ -95,16 +95,27 @@ def admin_dashboard(request):
 @role_required('registrar')
 def registrar_dashboard(request):
     """
-    Registrar dashboard with terms, sections, and curriculum control.
+    Registrar dashboard with terms, sections, curriculum control, and transferee management.
     """
-    from enrollment.models import Term, Section
+    from enrollment.models import Term, Section, TransfereeEnrollment
     from academics.models import Program, Curriculum
+
+    # Transferee statistics
+    pending_transferees = TransfereeEnrollment.objects.filter(
+        status='pending_tor_verification'
+    ).count()
+
+    tor_verified_transferees = TransfereeEnrollment.objects.filter(
+        status='tor_verified'
+    ).count()
 
     context = {
         'active_terms': Term.objects.filter(is_active=True, archived=False),
         'recent_sections': Section.objects.all().order_by('-created_at')[:10],
         'total_programs': Program.objects.count(),
         'total_curricula': Curriculum.objects.filter(active=True).count(),
+        'pending_transferees': pending_transferees,
+        'tor_verified_transferees': tor_verified_transferees,
     }
     return render(request, 'dashboards/registrar_dashboard.html', context)
 
@@ -206,3 +217,126 @@ def dean_dashboard(request):
         'programs': Program.objects.all(),
     }
     return render(request, 'dashboards/dean_dashboard.html', context)
+
+
+@login_required
+@role_required('student')
+def student_account_settings(request):
+    """
+    Student account settings page - allows students to edit username and password.
+    """
+    from django.contrib.auth import update_session_auth_hash
+    from audit.models import AuditTrail
+
+    user = request.user
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        # Change Username
+        if action == 'change_username':
+            new_username = request.POST.get('new_username', '').strip()
+            confirm_password = request.POST.get('confirm_password', '')
+
+            # Validation
+            errors = []
+
+            if not new_username:
+                errors.append('New username cannot be empty.')
+
+            if len(new_username) < 3:
+                errors.append('Username must be at least 3 characters long.')
+
+            if len(new_username) > 150:
+                errors.append('Username cannot exceed 150 characters.')
+
+            # Check if username already exists
+            if new_username != user.username and User.objects.filter(username=new_username).exists():
+                errors.append('This username is already taken.')
+
+            # Verify password
+            if not user.check_password(confirm_password):
+                errors.append('Incorrect password. Username change cancelled.')
+
+            if errors:
+                context = {
+                    'user': user,
+                    'errors': errors,
+                    'action': 'change_username',
+                }
+                return render(request, 'account_settings.html', context)
+
+            # Change username
+            old_username = user.username
+            user.username = new_username
+            user.save()
+
+            # Audit trail
+            AuditTrail.objects.create(
+                actor=user,
+                action='change_username',
+                entity='User',
+                entity_id=user.id,
+                new_value_json={
+                    'old_username': old_username,
+                    'new_username': new_username,
+                }
+            )
+
+            messages.success(request, f'Username changed successfully! Your new username is @{new_username}')
+            return redirect('account_settings')
+
+        # Change Password
+        elif action == 'change_password':
+            current_password = request.POST.get('current_password', '')
+            new_password = request.POST.get('new_password', '')
+            confirm_password = request.POST.get('confirm_password', '')
+
+            # Validation
+            errors = []
+
+            if not user.check_password(current_password):
+                errors.append('Current password is incorrect.')
+
+            if len(new_password) < 8:
+                errors.append('New password must be at least 8 characters long.')
+
+            if new_password != confirm_password:
+                errors.append('New passwords do not match.')
+
+            if new_password == current_password:
+                errors.append('New password must be different from current password.')
+
+            if errors:
+                context = {
+                    'user': user,
+                    'errors': errors,
+                    'action': 'change_password',
+                }
+                return render(request, 'account_settings.html', context)
+
+            # Change password
+            user.set_password(new_password)
+            user.save()
+
+            # Audit trail
+            AuditTrail.objects.create(
+                actor=user,
+                action='change_password',
+                entity='User',
+                entity_id=user.id,
+                new_value_json={
+                    'action': 'password_changed',
+                }
+            )
+
+            # Keep user logged in after password change
+            update_session_auth_hash(request, user)
+
+            messages.success(request, 'Password changed successfully!')
+            return redirect('account_settings')
+
+    context = {
+        'user': user,
+    }
+    return render(request, 'account_settings.html', context)

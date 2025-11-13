@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings - Richwell College{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Account Settings</h1>
+            <p class="text-lg text-gray-600">Manage your account credentials and security</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-8 space-y-4">
+            {% for message in messages %}
+            {% if 'success' in message.tags %}
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm text-green-800">{{ message }}</p>
+                </div>
+            </div>
+            {% elif 'error' in message.tags %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-red-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm text-red-800">{{ message }}</p>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if errors %}
+        <div class="mb-8 bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 class="font-semibold text-red-900 mb-2">Please fix the following errors:</h3>
+            <ul class="space-y-1">
+                {% for error in errors %}
+                <li class="text-sm text-red-800">• {{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                    <h2 class="font-semibold text-gray-900 mb-4">Account Menu</h2>
+                    <nav class="space-y-2">
+                        <a href="#change-username" class="block px-4 py-2 rounded-lg bg-blue-50 text-primary font-medium">
+                            Change Username
+                        </a>
+                        <a href="#change-password" class="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+                            Change Password
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Change Username Section -->
+                <div id="change-username" class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center mb-6">
+                        <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Change Username</h3>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p class="text-sm text-blue-800">
+                            <strong>Current Username:</strong> <code class="bg-white px-2 py-1 rounded">@{{ user.username }}</code>
+                        </p>
+                    </div>
+
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_username">
+
+                        <div>
+                            <label for="new_username" class="block text-sm font-medium text-gray-700 mb-2">
+                                New Username
+                            </label>
+                            <input
+                                type="text"
+                                id="new_username"
+                                name="new_username"
+                                placeholder="Enter your new username"
+                                minlength="3"
+                                maxlength="150"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">
+                                • 3-150 characters
+                                <br>
+                                • Letters, numbers, and underscores only
+                                <br>
+                                • Must be unique
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="confirm_password_username" class="block text-sm font-medium text-gray-700 mb-2">
+                                Confirm Your Password
+                            </label>
+                            <input
+                                type="password"
+                                id="confirm_password_username"
+                                name="confirm_password"
+                                placeholder="Enter your current password"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">For security, we need to verify your password</p>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                            Update Username
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Change Password Section -->
+                <div id="change-password" class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center mb-6">
+                        <svg class="w-6 h-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Change Password</h3>
+                    </div>
+
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password">
+
+                        <div>
+                            <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">
+                                Current Password
+                            </label>
+                            <input
+                                type="password"
+                                id="current_password"
+                                name="current_password"
+                                placeholder="Enter your current password"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="new_password" class="block text-sm font-medium text-gray-700 mb-2">
+                                New Password
+                            </label>
+                            <input
+                                type="password"
+                                id="new_password"
+                                name="new_password"
+                                placeholder="Enter your new password"
+                                minlength="8"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">
+                                • At least 8 characters
+                                <br>
+                                • Mix of uppercase, lowercase, numbers recommended
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">
+                                Confirm New Password
+                            </label>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder="Confirm your new password"
+                                minlength="8"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        >
+                            Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Security Tips -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-semibold text-yellow-900 mb-2">Security Tips</h4>
+                            <ul class="text-sm text-yellow-800 space-y-1">
+                                <li>• Use a strong, unique password with at least 8 characters</li>
+                                <li>• Avoid using common words or personal information</li>
+                                <li>• Don't share your password with anyone</li>
+                                <li>• Change your password regularly (every 3-6 months)</li>
+                                <li>• If you suspect your account has been compromised, change your password immediately</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8">
+            <a href="{% url 'student_dashboard' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

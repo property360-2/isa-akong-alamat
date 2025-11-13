@@ -88,8 +88,14 @@
                                 <div class="font-semibold">{{ user.get_full_name|default:user.username }}</div>
                                 <div class="text-xs text-gray-500">{{ user.role|title }}</div>
                             </div>
-                            <a href="{% url 'logout' %}"
+                            {% if user.role == 'student' %}
+                            <a href="{% url 'account_settings' %}"
                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Account Settings
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'logout' %}"
+                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-200">
                                 Sign out
                             </a>
                         </div>

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Details - Richwell School Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+            <svg class="h-8 w-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Account Created Successfully!</h1>
+        <p class="text-gray-600">{{ transferee.first_name }} {{ transferee.last_name }} account is ready for use.</p>
+    </div>
+
+    <!-- Credentials Card -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-8 border-t-4 border-green-500">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-8">Login Credentials</h2>
+
+        {% if username %}
+        <!-- Username -->
+        <div class="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <label class="block text-sm font-semibold text-gray-700 uppercase tracking-wide">Username</label>
+                <button type="button" onclick="copyToClipboard('username-value')"
+                        class="text-xs text-primary hover:text-blue-700 font-medium">
+                    Copy
+                </button>
+            </div>
+            <div id="username-value" class="font-mono text-2xl font-bold text-primary bg-white border border-blue-300 rounded p-4 break-all select-all">
+                {{ username }}
+            </div>
+            <p class="text-xs text-blue-700 mt-2">This is the login username</p>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <label class="block text-sm font-semibold text-gray-700 uppercase tracking-wide">Temporary Password</label>
+                <button type="button" onclick="copyToClipboard('password-value')"
+                        class="text-xs text-primary hover:text-blue-700 font-medium">
+                    Copy
+                </button>
+            </div>
+            <div id="password-value" class="font-mono text-2xl font-bold text-red-700 bg-white border border-red-300 rounded p-4 break-all select-all">
+                {{ password }}
+            </div>
+            <p class="text-xs text-red-700 mt-2">This is a temporary password. Student should change it after first login.</p>
+        </div>
+
+        <!-- Student ID -->
+        {% if student_id %}
+        <div class="mb-8 p-6 bg-purple-50 border border-purple-200 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <label class="block text-sm font-semibold text-gray-700 uppercase tracking-wide">Student ID</label>
+                <button type="button" onclick="copyToClipboard('student-id-value')"
+                        class="text-xs text-primary hover:text-blue-700 font-medium">
+                    Copy
+                </button>
+            </div>
+            <div id="student-id-value" class="font-mono text-4xl font-bold text-purple-700 bg-white border border-purple-300 rounded p-4 text-center">
+                {{ student_id }}
+            </div>
+            <p class="text-xs text-purple-700 mt-2">This is the student's permanent identification number</p>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Important Information -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start">
+            <svg class="h-6 w-6 text-yellow-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800 mb-2">Important Information</h3>
+                <ul class="text-sm text-yellow-700 space-y-2 list-disc list-inside">
+                    <li>Save these credentials in a secure location</li>
+                    <li>The password is temporary and should be changed after first login</li>
+                    <li>The student ID is permanent and used for all enrollment records</li>
+                    <li>Do not share credentials with anyone</li>
+                    <li>This page will only display these credentials once</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <h3 class="text-sm font-semibold text-blue-900 mb-4">Next Steps</h3>
+        <ol class="text-sm text-blue-800 space-y-3 list-decimal list-inside">
+            <li>
+                <strong>Print or save</strong> these credentials for the student
+            </li>
+            <li>
+                <strong>Provide credentials</strong> to the transferee through a secure method
+            </li>
+            <li>
+                <strong>Instruct student</strong> to login and complete their profile
+            </li>
+            <li>
+                <strong>Student enrolls</strong> in subjects for the upcoming term
+            </li>
+            <li>
+                <strong>Monitor enrollment</strong> to ensure all requirements are met
+            </li>
+        </ol>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row gap-4">
+        <button type="button" onclick="window.print()"
+                class="flex-1 inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4H7a2 2 0 01-2-2v-4a2 2 0 012-2h10a2 2 0 012 2v4a2 2 0 01-2 2zm-2-4h.01"></path>
+            </svg>
+            Print
+        </button>
+        <a href="{% url 'enrollment:transferee_detail' transferee.pk %}"
+           class="flex-1 inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-blue-700 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Details
+        </a>
+        <a href="{% url 'enrollment:transferee_list' %}"
+           class="flex-1 inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-600 hover:bg-gray-700 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            Transferee List
+        </a>
+    </div>
+
+    <!-- Credentials Display Notice -->
+    <div class="mt-8 p-4 bg-gray-100 border border-gray-300 rounded-lg text-center">
+        <p class="text-xs text-gray-600">
+            <strong>Note:</strong> These credentials were stored in the session and are only displayed once.
+            If you leave this page without saving them, you will need to reset the password through the admin panel.
+        </p>
+    </div>
+</div>
+
+<!-- Copy to Clipboard Script -->
+<script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        const text = element.textContent;
+
+        navigator.clipboard.writeText(text).then(() => {
+            // Show confirmation
+            const originalText = element.textContent;
+            element.textContent = '✓ Copied!';
+            element.style.backgroundColor = '#d1fae5';
+
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.backgroundColor = '';
+            }, 2000);
+        }).catch(err => {
+            alert('Failed to copy to clipboard');
+        });
+    }
+</script>
+{% endblock %}

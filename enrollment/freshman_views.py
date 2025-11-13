@@ -16,6 +16,27 @@ from users.models import User
 from audit.models import AuditTrail
 import secrets
 import string
+from datetime import datetime
+
+
+def generate_student_id(student):
+    """
+    Generate a unique student ID as a 6-digit number.
+    Format: XXXXXX (sequential 6-digit ID)
+    Starting from 100001 for first student
+    """
+    from enrollment.models import Student
+
+    if not student.program:
+        return None
+
+    # Count total students with assigned IDs + 1 to get next ID
+    count = Student.objects.filter(student_id__isnull=False).count() + 1
+
+    # Start from 100001 (6 digits)
+    student_id = f"{100000 + count}"
+
+    return student_id
 
 
 def freshman_landing(request):
@@ -279,9 +300,13 @@ def freshman_confirm_credentials(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Generate student ID
+                student_id = generate_student_id(student)
+
                 # Mark onboarding as complete
                 student.onboarding_complete = True
                 student.status = 'active'
+                student.student_id = student_id
                 student.save()
 
                 # Audit trail
@@ -293,6 +318,7 @@ def freshman_confirm_credentials(request):
                     new_value_json={
                         'onboarding_complete': True,
                         'status': 'active',
+                        'student_id': student_id,
                         'program': student.program.name,
                         'curriculum': student.curriculum.version,
                     }

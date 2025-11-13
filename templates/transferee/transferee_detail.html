@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block title %}Transferee Details - Richwell School Portal{% endblock %}
+
+{% block extra_head %}
+<style>
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .status-pending-credential-input {
+        background-color: rgb(191, 144, 0);
+        color: white;
+    }
+
+    .status-pending-tor-verification {
+        background-color: rgb(217, 119, 6);
+        color: white;
+    }
+
+    .status-tor-verified {
+        background-color: rgb(34, 197, 94);
+        color: white;
+    }
+
+    .status-account-created {
+        background-color: rgb(59, 130, 246);
+        color: white;
+    }
+
+    .status-rejected {
+        background-color: rgb(239, 68, 68);
+        color: white;
+    }
+
+    .info-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+        border-left: 3px solid rgb(59, 130, 246);
+        padding-left: 1rem;
+    }
+
+    .info-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: rgb(107, 114, 128);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: rgb(31, 41, 55);
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ transferee.first_name }} {{ transferee.last_name }}</h1>
+            <p class="text-gray-600 text-sm mt-1">{{ transferee.email }}</p>
+        </div>
+        <span class="status-badge status-{{ transferee.status|slugify }}">
+            {% if transferee.status == 'pending_credential_input' %}
+                Pending Input
+            {% elif transferee.status == 'pending_tor_verification' %}
+                Pending TOR Verification
+            {% elif transferee.status == 'tor_verified' %}
+                TOR Verified
+            {% elif transferee.status == 'account_created' %}
+                Account Created
+            {% elif transferee.status == 'rejected' %}
+                Rejected
+            {% endif %}
+        </span>
+    </div>
+
+    <!-- Back Button -->
+    <a href="{% url 'enrollment:transferee_list' %}"
+       class="inline-flex items-center text-primary hover:text-blue-700 mb-6 font-medium text-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to List
+    </a>
+
+    <!-- Transferee Information -->
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+        <div class="info-group">
+            <div class="info-item">
+                <div class="info-label">First Name</div>
+                <div class="info-value">{{ transferee.first_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Middle Name</div>
+                <div class="info-value">{{ transferee.middle_name|default:"—" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Last Name</div>
+                <div class="info-value">{{ transferee.last_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Suffix</div>
+                <div class="info-value">{{ transferee.suffix|default:"—" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ transferee.email }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Mobile</div>
+                <div class="info-value">{{ transferee.mobile|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Information -->
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Transfer Information</h2>
+        <div class="info-group">
+            <div class="info-item">
+                <div class="info-label">Transfer Type</div>
+                <div class="info-value">
+                    {% if transferee.transfer_type == 'same_school' %}
+                        Same School Transfer
+                    {% else %}
+                        External School Transfer
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Source School</div>
+                <div class="info-value">{{ transferee.source_school }}</div>
+            </div>
+            <div class="info-item col-span-full">
+                <div class="info-label">Source Program</div>
+                <div class="info-value">{{ transferee.source_program }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Assignment -->
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Program Assignment</h2>
+        <div class="info-group">
+            <div class="info-item">
+                <div class="info-label">Target Program</div>
+                <div class="info-value">{{ transferee.program.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Target Curriculum</div>
+                <div class="info-value">{{ transferee.curriculum.name }} ({{ transferee.curriculum.year_started }})</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOR Verification Status -->
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">TOR Verification Status</h2>
+        <div class="info-group">
+            <div class="info-item">
+                <div class="info-label">TOR Verified</div>
+                <div class="info-value">
+                    {% if transferee.tor_verified %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            Yes
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Pending
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if transferee.tor_verified_at %}
+            <div class="info-item">
+                <div class="info-label">Verified At</div>
+                <div class="info-value">{{ transferee.tor_verified_at|date:"M d, Y \a\t H:i" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Verified By</div>
+                <div class="info-value">{{ transferee.tor_verified_by.get_full_name|default:transferee.tor_verified_by.username }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Credits from TOR -->
+    {% if credits %}
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Credits from TOR</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Code</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mapped Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for credit in credits %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ credit.source_subject_code }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ credit.source_subject_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ credit.grade }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {% if credit.subject %}
+                                <span class="text-primary font-medium">{{ credit.subject.code }}</span><br>
+                                <span class="text-xs text-gray-600">{{ credit.subject.title }}</span>
+                            {% else %}
+                                <span class="text-gray-400">Not mapped</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if credit.status == 'credited' %}bg-green-100 text-green-800{% elif credit.status == 'pending' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ credit.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-900">
+                <strong>Note:</strong> Credits can be managed in the admin panel. Mark credits as "credited" to include them in the student's account when created.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Section -->
+    {% if transferee.status != 'rejected' and transferee.status != 'account_created' %}
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Actions</h2>
+
+        {% if transferee.status == 'pending_tor_verification' %}
+        <!-- Verify TOR Form -->
+        <form method="post" class="mb-6">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="verify_tor">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-green-900">Verify TOR</h3>
+                        <p class="text-sm text-green-700 mt-1">After verifying the hardcopy of the Transcript of Records, click the button below to mark as verified.</p>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium whitespace-nowrap">
+                        Verify TOR
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+
+        {% if transferee.status == 'tor_verified' %}
+        <!-- Create Account Form -->
+        <form method="post" class="mb-6">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_account">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-blue-900">Create Student Account</h3>
+                        <p class="text-sm text-blue-700 mt-1">Generate username, password, and student ID for this transferee.</p>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium whitespace-nowrap">
+                        Create Account
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+
+        {% if transferee.status != 'account_created' %}
+        <!-- Reject Form -->
+        <form method="post" x-data="{ showRejectForm: false }">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <div x-show="!showRejectForm" class="bg-red-50 border border-red-200 rounded-lg p-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-red-900">Reject Enrollment</h3>
+                        <p class="text-sm text-red-700 mt-1">Reject this transferee enrollment if they don't meet requirements.</p>
+                    </div>
+                    <button type="button" @click="showRejectForm = true" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium whitespace-nowrap">
+                        Reject
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="showRejectForm" class="bg-red-50 border border-red-200 rounded-lg p-6">
+                <h3 class="text-lg font-medium text-red-900 mb-4">Rejection Reason</h3>
+                <textarea name="rejection_reason" rows="4"
+                          placeholder="Provide a clear reason for rejection..."
+                          required
+                          class="block w-full px-4 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"></textarea>
+                <div class="flex justify-end space-x-3 mt-4">
+                    <button type="button" @click="showRejectForm = false" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium">
+                        Confirm Rejection
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Rejection Information -->
+    {% if transferee.status == 'rejected' %}
+    <div class="bg-white rounded-lg shadow p-8 mb-8 border-l-4 border-red-500">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Rejection Information</h2>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+            <p class="text-sm text-red-900 whitespace-pre-wrap">{{ transferee.rejection_reason }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Account Information -->
+    {% if transferee.status == 'account_created' %}
+    <div class="bg-white rounded-lg shadow p-8 mb-8 border-l-4 border-green-500">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Account Information</h2>
+        <div class="info-group">
+            <div class="info-item">
+                <div class="info-label">Account Created At</div>
+                <div class="info-value">{{ transferee.account_created_at|date:"M d, Y \a\t H:i" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Account Created By</div>
+                <div class="info-value">{{ transferee.account_created_by.get_full_name|default:transferee.account_created_by.username }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Student ID</div>
+                <div class="info-value font-mono text-lg text-primary">{{ transferee.created_user.student.student_id }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Username</div>
+                <div class="info-value font-mono">{{ transferee.created_user.username }}</div>
+            </div>
+        </div>
+        <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p class="text-sm text-green-900">
+                ✓ Account is ready. The transferee can now login and enroll in subjects for the next term.
+            </p>
+        </div>
+        <div class="mt-4">
+            <a href="{% url 'enrollment:transferee_account_details' transferee.pk %}"
+               class="inline-flex items-center text-primary hover:text-blue-700 font-medium">
+                View Account Details
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Notes Section -->
+    {% if transferee.notes %}
+    <div class="bg-white rounded-lg shadow p-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Notes</h2>
+        <p class="text-gray-700 whitespace-pre-wrap">{{ transferee.notes }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
